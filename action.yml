@@ -1,5 +1,9 @@
 name: Publish Action
 description: Action that I use for automated publishing / versionin everything
+inputs:
+  VERSION_STRATEGY:
+    description: See config.bumpingVersionStrategy
+    required: true
 runs:
   using: node12
   main: build-action/index.js

@@ -48,6 +48,11 @@ export interface Config {
     }
     bumpingVersionStrategy: 'none' | keyof typeof versionMaps
     plugins: Record<string, Plugin.Plugin>
+    /** Publish and generate changelog only when commit with [publish] in start is pushed (or custom regexp)
+     * @default By default it would always publish
+     */
+    // TODO
+    requirePublishKeyword: boolean | RegExp
 }
 
 export const defaultConfig: Config = {
@@ -57,4 +62,5 @@ export const defaultConfig: Config = {
     },
     bumpingVersionStrategy: 'semverUnstable',
     plugins: builtinPlugins,
+    requirePublishKeyword: false,
 }
