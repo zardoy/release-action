@@ -184,9 +184,9 @@ test('BREAKING gives major', async () => {
       "commitMessagesByNoteRule": Object {
         "major": Array [
           "add new feature
-     config was removed",
+    config was removed",
           "just adding feature
-     we broke anything",
+    we broke anything",
         ],
         "minor": Array [
           "but here we didn't break anything",
@@ -221,20 +221,20 @@ test('BREAKING gives major on unstable', async () => {
         }),
     ).toMatchInlineSnapshot(`
     Object {
-      "bumpType": "patch",
+      "bumpType": "minor",
       "commitMessagesByNoteRule": Object {
-        "minor": Array [
+        "major": Array [
           "add new feature
-     config was removed",
+    config was removed",
           "just adding feature
-     we broke anything",
+    we broke anything",
         ],
         "patch": Array [
           "fix serious issue",
           "first fixes",
         ],
       },
-      "nextVersion": "0.0.8",
+      "nextVersion": "0.1.0",
     }
   `)
 })
