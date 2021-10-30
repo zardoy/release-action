@@ -1,5 +1,5 @@
 import { Octokit, RestEndpointMethodTypes } from '@octokit/rest'
-import { ReleaseType, major } from 'semver'
+import { ReleaseType, major, inc as bumpVersion } from 'semver'
 import { Config } from './config'
 import { OctokitRepo } from './types'
 
@@ -42,6 +42,7 @@ const notesRules: Record<string, Record<string, NotesRule>> = {
 
 interface VersionRule {
     regex: RegExp
+    startsNew: boolean
     bump: false | ReleaseType
     /** otherwise `bump` is used by default */
     notesRule?: string
@@ -51,14 +52,17 @@ const versionRules: VersionRule[] = [
     // TODO skip release
     {
         regex: /^fix:/,
+        startsNew: true,
         bump: 'patch',
     },
     {
         regex: /^feat:/,
+        startsNew: true,
         bump: 'minor',
     },
     {
-        regex: /BREAKING CHANGE/,
+        regex: /BREAKING( CHANGE)?/,
+        startsNew: false,
         bump: 'major',
     },
 ]
@@ -69,6 +73,7 @@ const versionPriority: Record<BasicReleaseType | 'none', number> = {
     minor: 2,
     major: 3,
 }
+const getBumpTypeByPriority = (priority: number) => Object.entries(versionPriority).find(([, p]) => p === priority)![0]
 
 type VersionMap = Record<BasicReleaseType, BasicReleaseType> & {
     /** @default Always appliable */
@@ -77,7 +82,7 @@ type VersionMap = Record<BasicReleaseType, BasicReleaseType> & {
 export const makeVersionMaps = <T extends string>(versionsMaps: Record<T, VersionMap>) => versionsMaps
 
 /** Opiniated too */
-export const versionMaps = makeVersionMaps({
+export const versionBumpingStrategies = makeVersionMaps({
     /**
      * 0.0.1 -> BREAKING -> 0.1.0 (not semver!)
      * 0.1.0 -> BREAKING -> 0.2.0
@@ -116,15 +121,16 @@ type BumpVersionParams = {
 }
 
 interface NextVersionReturn {
-    bumpLevel: number
     bumpType: BasicReleaseType | 'none'
-    nextVersion: string
+    /** undefined - version is the same */
+    nextVersion: string | undefined
     /** `{[noteRule: string]: commitMessages[]}` */
     commitMessagesByNoteRule: {
         [noteRule: string]: string[]
     }
 }
 
+/** DEFAULT. wrapper to use latest tag is present */
 export const getNextVersionAndReleaseNotes = async ({ octokit, repo, config }: BumpVersionParams): Promise<NextVersionReturn> => {
     const { data: tags } = await octokit.repos.listTags({
         ...repo,
@@ -133,7 +139,6 @@ export const getNextVersionAndReleaseNotes = async ({ octokit, repo, config }: B
     const noTags = tags.length === 0
     if (noTags) {
         return {
-            bumpLevel: 0,
             bumpType: 'none',
             nextVersion: config.initialVersion.version,
             commitMessagesByNoteRule: { rawOverride: [config.initialVersion.releaseNotes] },
@@ -152,13 +157,15 @@ export const getNextVersionAndReleaseNotes = async ({ octokit, repo, config }: B
     }
 }
 
+/** use with fetched tag */
 export const getNextVersionAndReleaseNotesFromTag = async ({
     tag: { commitSha: tagCommitSha, version: tagVersion },
     octokit,
     repo,
     config,
-}: { tag: Record<'version' | 'commitSha', string> } & BumpVersionParams): Promise<NextVersionReturn> => {
-    let commits: RestEndpointMethodTypes['repos']['listCommits']['response']['data'] = []
+    addCommitLink = true,
+}: { tag: Record<'version' | 'commitSha', string>; addCommitLink?: boolean } & BumpVersionParams): Promise<NextVersionReturn> => {
+    let commits: { sha: string; commit: { message: string } }[] = []
     for (let i = 1; true; i++) {
         const { data: justFetchedCommits } = await octokit.repos.listCommits({
             ...repo,
@@ -169,43 +176,71 @@ export const getNextVersionAndReleaseNotesFromTag = async ({
         if (tagCommitIndex === -1) continue
         const commitsBeforeTag = commits.slice(0, commits.length - justFetchedCommits.length + tagCommitIndex)
         const commitMessagesBeforeTag = commitsBeforeTag.map(c => c.commit.message)
-        let finalBumpLevel = 0
+        /** But before strategy resolve */
+        let resolvedBumpLevel = 0
         const releaseNotes: NextVersionReturn['commitMessagesByNoteRule'] = {}
+        const processCommitMessage = (message: string) => {
+            let prNumber: string | undefined
+            let closesIssues = [] as number[]
+            message = message
+                // too weak detection
+                .replace(/\(#(\d+)\)$/, (_, num) => {
+                    prNumber = num
+                    return ''
+                })
+                .replace(/(closes|fixes) #(\d+)/, (_, num) => {
+                    closesIssues.push(+num)
+                    return ''
+                })
+            if (prNumber) message += `(${prNumber})`
+            else if (closesIssues.length) message += `(${closesIssues.join(', ')})`
+
+            return message
+        }
         commit: for (const commitMessage of commitMessagesBeforeTag) {
             let commit = {
                 bumpLevel: 0,
-                // taked care of that
+                // cared of that
                 notesRule: null as string | null,
             }
-            for (const versionRule of versionRules) {
-                if (!commitMessage.match(versionRule.regex)) continue
-                if (versionRule.bump === false) continue commit
-                const notesRule = versionRule.notesRule ?? versionRule.bump
-                const currentPriority = versionPriority[versionRule.bump]
-                if (currentPriority < commit.bumpLevel) continue
-                commit = {
-                    bumpLevel: currentPriority,
-                    notesRule,
+            for (const commitMessageLine of commitMessage.split('\n')) {
+                for (const versionRule of versionRules) {
+                    if (!commitMessageLine.match(versionRule.regex)) continue
+                    // if (versionRule.startsNew)
+                    if (versionRule.bump === false) continue commit
+                    const notesRule = versionRule.notesRule ?? versionRule.bump
+                    const currentPriority = versionPriority[versionRule.bump]
+                    if (currentPriority < commit.bumpLevel) continue
+                    commit = {
+                        bumpLevel: currentPriority,
+                        notesRule,
+                    }
                 }
+                if (!commit.notesRule) continue
+                const { bumpLevel, notesRule } = commit
+                if (!releaseNotes[notesRule]) releaseNotes[notesRule] = []
+                releaseNotes[notesRule]!.push(processCommitMessage(commitMessage))
+                if (bumpLevel < resolvedBumpLevel) continue
+                resolvedBumpLevel = bumpLevel
             }
-            if (!commit.notesRule) continue
-            const { bumpLevel, notesRule } = commit
-            if (!releaseNotes[notesRule]) releaseNotes[notesRule] = []
-            releaseNotes[notesRule]!.push(commitMessage)
-            if (bumpLevel < finalBumpLevel) continue
-            finalBumpLevel = bumpLevel
         }
-        let nextVersion: string | undefined
-        if (config.bumpingVersionStrategy !== 'none') {
-            for (const [mapName, versionMap] of Object.entries(versionMaps)) {
-                if (versionMap.isAppliable && !versionMap.isAppliable(tagVersion)) continue
-                nextVersion =
+        let nextVersion: undefined | string
+        let bumpType = getBumpTypeByPriority(resolvedBumpLevel)
+        if (bumpType === undefined || config.bumpingVersionStrategy === 'none') {
+        } else {
+            const strategyConfig = versionBumpingStrategies[config.bumpingVersionStrategy]
+            if (strategyConfig.isAppliable && !strategyConfig.isAppliable(tagVersion)) {
+            } else {
+                bumpType = strategyConfig[bumpType]
             }
+        }
+        if (bumpType !== 'none') {
+            nextVersion = bumpVersion(tagVersion, bumpType)!
+            if (nextVersion === null) throw new Error('Just bumped version is invalid')
         }
         return {
-            bumpLevel: finalBumpLevel,
-            bumpType: Object.entries(versionPriority).find(([, n]) => n === finalBumpLevel)![0],
-            nextVersion: 0,
+            bumpType,
+            nextVersion,
             commitMessagesByNoteRule: releaseNotes,
         }
     }

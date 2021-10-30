@@ -67,7 +67,7 @@ export const defaultConfig: Config = {
 
 export type GlobalPreset = 'npm' | 'vscode-extension'
 
-/** this is just config overrides, however internal logic still can rely on the preset e.g. Readme Processor */
+/** this is just config overrides, however the process or publishing is heavily customized in its own files */
 export const presetConfigOverrides: Record<GlobalPreset, Partial<Config>> = {
     npm: {},
     'vscode-extension': {},

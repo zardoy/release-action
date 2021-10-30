@@ -1,6 +1,6 @@
 # Publish Action
 
-I temporary removed `semantic-release` because of plenty of problems.
+I temporary use it instead of `semantic-release`.
 
 This action:
 
@@ -11,8 +11,9 @@ Warning! I didn't make it available to public usage, because it's highly opinion
 
 - Works only with GitHub
 - Works best with tsc
+- Presets were configured for my workflow and minimal setup
 
-## TODO:
+## TODO
 
 - prerelease
 - contribution channels
