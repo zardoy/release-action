@@ -193,7 +193,12 @@ export const getNextVersionAndReleaseNotesFromTag = async ({
                     closesIssues.push(+num)
                     return ''
                 })
+                // strip two empty lines into one
                 .replace(/\n\n\n/g, '\n\n')
+                // strip whitespaces on every line
+                .split('\n')
+                .map(str => str.trim())
+                .join('\n')
             if (prNumber) message += `(${prNumber})`
             else if (closesIssues.length) message += ` (${closesIssues.map(n => `#${n}`).join(', ')})`
 
