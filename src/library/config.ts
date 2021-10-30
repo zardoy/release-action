@@ -1,4 +1,4 @@
-import { SemverVersionString, versionMaps } from './bumpVersion'
+import { SemverVersionString, versionBumpingStrategies } from './bumpVersion'
 
 namespace Plugin {
     /** What specific plugin hook can override */
@@ -46,7 +46,7 @@ export interface Config {
         version: SemverVersionString
         releaseNotes: string
     }
-    bumpingVersionStrategy: 'none' | keyof typeof versionMaps
+    bumpingVersionStrategy: 'none' | keyof typeof versionBumpingStrategies
     plugins: Record<string, Plugin.Plugin>
     /** Publish and generate changelog only when commit with [publish] in start is pushed (or custom regexp)
      * @default By default it would always publish
