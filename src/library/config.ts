@@ -7,7 +7,7 @@ namespace Plugin {
         newVersion?: string
     }
 
-    export interface PluginHooks<> {
+    export interface PluginHooks {
         onCommitMessage?: {
             matches: RegExp
             stripRegexp: boolean
@@ -53,6 +53,9 @@ export interface Config {
      */
     // TODO
     requirePublishKeyword: boolean | RegExp
+    linksToSameCommit: boolean
+    /** how to order notes by date of the commit. just reverses in case of `desc` */
+    // notesOrder: 'asc-by-date' | 'desc-by-date'
 }
 
 export const defaultConfig: Config = {
@@ -63,6 +66,8 @@ export const defaultConfig: Config = {
     bumpingVersionStrategy: 'semverUnstable',
     plugins: builtinPlugins,
     requirePublishKeyword: false,
+    // notesOrder: 'asc-by-date',
+    linksToSameCommit: true,
 }
 
 export type GlobalPreset = 'npm' | 'vscode-extension'

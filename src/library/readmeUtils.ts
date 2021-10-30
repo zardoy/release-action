@@ -1,12 +1,12 @@
 import { PackageJson, TsConfigJson } from 'type-fest'
 import { RepoInfo } from 'github-remote-info'
-import { remark } from 'remark'
+import remark from 'remark'
 
 type PlaceholderCallback = (data: { packageJson: PackageJson; tsconfigJson: TsConfigJson; originInfo: RepoInfo }) => string | Promise<string>
 
 const makePlaceholders = <T extends Record<string, PlaceholderCallback>>(placeholders: T) => placeholders
 
-export const placeholders = makePlaceholders({
+const placeholders = makePlaceholders({
     '[[paka-docs]]': ({ packageJson }) => {
         // TODO maybe text: Docs
         return `[API](https://paka.dev/npm/${packageJson})`
@@ -18,6 +18,7 @@ export const markdownRemoveHeading = async (markdown: string, headingToRemove: s
     return remark()
         .use(() => {
             return rootNode => {
+                //@ts-expect-error TODO update remark when esm issues with jest are resolved
                 const { children } = rootNode
                 // children.splice(0, 1)
                 const headingToRemoveIndex = children.findIndex(node => {

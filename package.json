@@ -14,15 +14,15 @@
         "postinstall": "husky install"
     },
     "dependencies": {
-        "@octokit/rest": "^18.11.1",
+        "@octokit/rest": "^18.12.0",
         "execa": "^5.1.1",
         "github-remote-info": "^1.0.3",
         "lodash": "^4.17.21",
         "modify-json-file": "^1.2.1",
-        "remark": "^14.0.1",
+        "remark": "13",
         "semantic-release": "^18.0.0",
         "semver": "^7.3.5",
-        "ts-node": "^10.2.1",
+        "ts-node": "^10.4.0",
         "typed-jsonfile": "^0.1.1"
     },
     "devDependencies": {
@@ -31,15 +31,17 @@
         "@babel/preset-env": "^7.16.0",
         "@babel/preset-typescript": "^7.16.0",
         "@types/jest": "^27.0.2",
-        "@types/lodash": "^4.14.175",
-        "@types/node": "^16.10.2",
+        "@types/lodash": "^4.14.176",
+        "@types/node": "^16.11.6",
         "@types/semantic-release": "^17.2.2",
-        "@types/semver": "^7.3.8",
+        "@types/semver": "^7.3.9",
         "@zardoy/tsconfig": "^1.2.2",
-        "esbuild": "^0.13.3",
-        "husky": "^7.0.2",
-        "jest": "^27.2.4",
-        "type-fest": "^2.3.4",
-        "typescript": "^4.4.3"
+        "esbuild": "^0.13.11",
+        "esbuild-runner": "^2.2.1",
+        "husky": "^7.0.4",
+        "jest": "^27.3.1",
+        "prettier": "^2.4.1",
+        "type-fest": "^2.5.2",
+        "typescript": "^4.4.4"
     }
 }

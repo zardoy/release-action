@@ -44,6 +44,7 @@ interface VersionRule {
     regex: RegExp
     startsNew: boolean
     bump: false | ReleaseType
+    stripByRegex?: boolean
     /** otherwise `bump` is used by default */
     notesRule?: string
 }
@@ -112,12 +113,10 @@ export const versionBumpingStrategies = makeVersionMaps({
     },
 })
 
-type BumpVersionConfig = Pick<Config, 'bumpingVersionStrategy' | 'initialVersion'>
-
 type BumpVersionParams = {
     octokit: Octokit
     repo: OctokitRepo
-    config: BumpVersionConfig
+    config: Config
 }
 
 interface NextVersionReturn {
@@ -163,8 +162,8 @@ export const getNextVersionAndReleaseNotesFromTag = async ({
     octokit,
     repo,
     config,
-    addCommitLink = true,
-}: { tag: Record<'version' | 'commitSha', string>; addCommitLink?: boolean } & BumpVersionParams): Promise<NextVersionReturn> => {
+}: // addCommitLink = true,
+{ tag: Record<'version' | 'commitSha', string> /* addCommitLink?: boolean */ } & BumpVersionParams): Promise<NextVersionReturn> => {
     let commits: { sha: string; commit: { message: string } }[] = []
     for (let i = 1; true; i++) {
         const { data: justFetchedCommits } = await octokit.repos.listCommits({
@@ -183,47 +182,86 @@ export const getNextVersionAndReleaseNotesFromTag = async ({
             let prNumber: string | undefined
             let closesIssues = [] as number[]
             message = message
+                // remove conventional format part (before :)
+                .replace(/^(\S+\s?)?\w+:/, '')
                 // too weak detection
                 .replace(/\(#(\d+)\)$/, (_, num) => {
                     prNumber = num
                     return ''
                 })
-                .replace(/(closes|fixes) #(\d+)/, (_, num) => {
+                .replace(/(?:closes|fixes) #(\d+)/g, (_, num) => {
                     closesIssues.push(+num)
                     return ''
                 })
+                .replace(/\n\n\n/g, '\n\n')
             if (prNumber) message += `(${prNumber})`
-            else if (closesIssues.length) message += `(${closesIssues.join(', ')})`
+            else if (closesIssues.length) message += ` (${closesIssues.map(n => `#${n}`).join(', ')})`
 
-            return message
+            return message.trim()
         }
+        // TODO config.linksToSameCommit
         commit: for (const commitMessage of commitMessagesBeforeTag) {
-            let commit = {
-                bumpLevel: 0,
-                // cared of that
-                notesRule: null as string | null,
-            }
+            const bumps: Array<{ bumpLevel: number; notesRule: string; rawMessage: string }> = []
+            let lineNumber = -1
+            /** if true, add message to last `bumps` */
+            let lastSatisfies = false
             for (const commitMessageLine of commitMessage.split('\n')) {
+                lineNumber++
+                let isConventionalCommitMessage = /^(\S+\s?)?\w+:/.test(commitMessageLine)
+                let currentBump = {
+                    bumpLevel: 0,
+                    notesRule: null as null | string,
+                    versionRule: null! as VersionRule,
+                }
                 for (const versionRule of versionRules) {
                     if (!commitMessageLine.match(versionRule.regex)) continue
-                    // if (versionRule.startsNew)
+                    // TODO cancel bumping of commitMessageLine, not whole commit
                     if (versionRule.bump === false) continue commit
                     const notesRule = versionRule.notesRule ?? versionRule.bump
                     const currentPriority = versionPriority[versionRule.bump]
-                    if (currentPriority < commit.bumpLevel) continue
-                    commit = {
+                    if (currentPriority < currentBump.bumpLevel) continue
+                    currentBump = {
                         bumpLevel: currentPriority,
                         notesRule,
+                        versionRule,
                     }
                 }
-                if (!commit.notesRule) continue
-                const { bumpLevel, notesRule } = commit
+                if (!currentBump.notesRule) {
+                    if (isConventionalCommitMessage) {
+                        lastSatisfies = false
+                    } else {
+                        // TODO continue to use .at when node versions are resolved
+                        if (lastSatisfies) bumps.slice(-1)[0]!.rawMessage += `\n${commitMessageLine}`
+                    }
+                    continue
+                }
+                const { bumpLevel, notesRule, versionRule } = currentBump
+                lastSatisfies = true
+                let rawMessage = versionRule.stripByRegex ?? true ? commitMessageLine.replace(versionRule.regex, '') : commitMessageLine
+                if (versionRule.startsNew || bumps.length === 0) {
+                    bumps.push({
+                        bumpLevel,
+                        notesRule,
+                        rawMessage,
+                    })
+                } else {
+                    const lastBump = bumps.slice(-1)[0]!
+                    bumps.splice(bumps.length - 1, 1, {
+                        ...lastBump,
+                        bumpLevel,
+                        notesRule,
+                        rawMessage: lastBump.rawMessage + '\n' + rawMessage,
+                    })
+                }
+            }
+            for (const { bumpLevel, notesRule, rawMessage } of bumps) {
                 if (!releaseNotes[notesRule]) releaseNotes[notesRule] = []
-                releaseNotes[notesRule]!.push(processCommitMessage(commitMessage))
+                releaseNotes[notesRule]!.push(processCommitMessage(rawMessage))
                 if (bumpLevel < resolvedBumpLevel) continue
                 resolvedBumpLevel = bumpLevel
             }
         }
+        // TODO respect order config with l
         let nextVersion: undefined | string
         let bumpType = getBumpTypeByPriority(resolvedBumpLevel)
         if (bumpType === undefined || config.bumpingVersionStrategy === 'none') {

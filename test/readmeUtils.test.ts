@@ -4,23 +4,32 @@ import { markdownRemoveHeading } from '../src/library/readmeUtils'
 
 test('Removes heading', async () => {
     expect(
-        await markdownRemoveHeading(
-            `
-    # Name
+await markdownRemoveHeading(
+`
+# Name
 
-    > Introduction
+> Introduction
 
-    ## Test Remove ME
+## Test Remove ME
 
-    Some Text
+Some Text
 
-    ### Another heading
+### Another heading
 
-    Content...
-    ## Continue to go
-    ...
-    `,
-            'Test Remove ME',
-        ),
-    ).toMatchInlineSnapshot()
+Content...
+## Continue to go
+...
+`,
+'Test Remove ME')).
+
+toMatchInlineSnapshot(`
+"# Name
+
+> Introduction
+
+## Continue to go
+
+...
+"
+`)
 })
