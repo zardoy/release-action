@@ -187,10 +187,11 @@ export const getNextVersionAndReleaseNotesFromTag = async ({
                 .split('\n')
                 .map(str => str.trim())
                 .join('\n')
-            if (prNumber) message += `(${prNumber})`
+            if (prNumber) message += ` (#${prNumber})`
             else if (closesIssues.length) message += ` (${closesIssues.map(n => `#${n}`).join(', ')})`
 
-            if (sha) message += `[\`${sha.slice(0, 7)}\`](https://github.com/${repo.owner}/${repo.repo}/commit/${sha})`
+            if (sha && !prNumber && closesIssues.length === 0)
+                message += ` ([\`${sha.slice(0, 7)}\`](https://github.com/${repo.owner}/${repo.repo}/commit/${sha}))`
 
             return message.trim()
         }

@@ -21,7 +21,7 @@ const getMockedOctokit = (tags: { name: `v${string}`; commit: { sha: string } }[
     } as unknown as Octokit
 }
 
-const dummyRepo = { owner: '/', repo: '/' }
+const dummyRepo = { owner: 'user', repo: 'repository' }
 
 const args = {
     config: defaultConfig,
@@ -270,6 +270,51 @@ test('Extracts scopes correctly', async () => {
         "patch": Array [
           "fix serious issue",
           "**(library-action)**: first fixes",
+        ],
+      },
+      "nextVersion": "0.1.0",
+    }
+  `)
+})
+
+test("Extracts sha's correctly", async () => {
+    expect(
+        await getNextVersionAndReleaseNotes({
+            octokit: getMockedOctokit(
+                [{ name: 'v0.0.7', commit: { sha: '123' } }],
+                [
+                    "fix: something fixed but we don't care",
+                    {
+                        message: 'fix: fix serious issue\nfeat: add new feature\nBREAKING config was removed',
+                        sha: '7f8468286354936e8817607d7a2087715bbe1854',
+                    },
+
+                    {
+                        message: 'fix: something was contributed (#123)',
+                        sha: '7f8468286354936e8817607d7a2087715bbe1854',
+                    },
+
+                    {
+                        message: 'feat: should not be here',
+                        sha: '123',
+                    },
+                ],
+            ),
+
+            ...args,
+        }),
+    ).toMatchInlineSnapshot(`
+    Object {
+      "bumpType": "minor",
+      "commitsByRule": Object {
+        "major": Array [
+          "add new feature
+    config was removed ([\`7f84682\`](https://github.com/user/repository/commit/7f8468286354936e8817607d7a2087715bbe1854))",
+        ],
+        "patch": Array [
+          "something fixed but we don't care",
+          "fix serious issue ([\`7f84682\`](https://github.com/user/repository/commit/7f8468286354936e8817607d7a2087715bbe1854))",
+          "something was contributed (#123)",
         ],
       },
       "nextVersion": "0.1.0",
