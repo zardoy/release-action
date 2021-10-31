@@ -9,7 +9,6 @@
         "build"
     ],
     "scripts": {
-        "postinstall": "husky install",
         "prepublishOnly": "tsc"
     },
     "dependencies": {
