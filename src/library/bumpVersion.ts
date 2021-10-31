@@ -9,9 +9,12 @@ type BasicReleaseType = 'patch' | 'minor' | 'major'
 
 export interface NotesRule {
     groupTitle: string
-    stripScope?: boolean
+    /** @default 0 */
+    order?: number
+    // TODO uncomment in future
+    // stripScope?: boolean
     /** PR, otherwise commit linked issue, otherwise commit if commit is empty - nothing */
-    noteLink?: boolean
+    // noteLink?: boolean
 }
 
 type OptionalPropertyOf<T extends object> = Exclude<
@@ -21,10 +24,10 @@ type OptionalPropertyOf<T extends object> = Exclude<
     undefined
 >
 
-const notesRulesDefaults: Required<Pick<NotesRule, OptionalPropertyOf<NotesRule>>> = {
-    stripScope: false,
-    noteLink: true,
-}
+// const notesRulesDefaults: Required<Pick<NotesRule, OptionalPropertyOf<NotesRule>>> = {
+//     stripScope: false,
+//     noteLink: true,
+// }
 
 interface VersionRule {
     matches: RegExp | { conventionalType: string }

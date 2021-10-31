@@ -3,7 +3,8 @@ import { Octokit } from '@octokit/rest'
 import { getNextVersionAndReleaseNotes } from '../src/library/bumpVersion'
 import { defaultConfig } from '../src/library/config'
 
-const getMockedOctokit = (tags: { name: `v${string}`; commit: { sha: string } }[], commitsInput: ({ message: string; sha?: string } | string)[]) => {
+// To its own files
+export const getMockedOctokit = (tags: { name: `v${string}`; commit: { sha: string } }[], commitsInput: ({ message: string; sha?: string } | string)[]) => {
     const commits: { sha: string; commit: { message: string } }[] = commitsInput.map(data => {
         if (typeof data === 'string') return { commit: { message: data }, sha: '' }
         const { message, sha = '' } = data
@@ -27,6 +28,8 @@ const args = {
     config: defaultConfig,
     repo: dummyRepo,
 }
+
+// TODO try to extract to fixtures for reuse
 
 test('Initial release', async () => {
     expect(
