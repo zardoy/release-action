@@ -13,6 +13,8 @@ Warning! I didn't make it available to public usage, because it's highly opinion
 - Works best with tsc
 - Presets were configured for my workflow and minimal setup
 
+Yet another automatic release solution & changelog generator that is intended to work only with GitHub and have clean & configurable base, without unneeded layers of abstraction.
+
 ## TODO
 
 - prerelease
