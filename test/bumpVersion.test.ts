@@ -68,7 +68,7 @@ test('Just bumps correctly', async () => {
     ).toMatchInlineSnapshot(`
     Object {
       "bumpType": "patch",
-      "commitMessagesByNoteRule": Object {
+      "commitsByRule": Object {
         "minor": Array [
           "add new feature",
           "just adding feature",
@@ -104,7 +104,7 @@ test('Just bumps correctly when stable', async () => {
     ).toMatchInlineSnapshot(`
     Object {
       "bumpType": "minor",
-      "commitMessagesByNoteRule": Object {
+      "commitsByRule": Object {
         "minor": Array [
           "add new feature",
           "just adding feature",
@@ -145,7 +145,7 @@ test("Doesn't pick commits below version", async () => {
     ).toMatchInlineSnapshot(`
     Object {
       "bumpType": "minor",
-      "commitMessagesByNoteRule": Object {
+      "commitsByRule": Object {
         "minor": Array [
           "add new feature",
           "just adding feature",
@@ -181,7 +181,7 @@ test('BREAKING gives major', async () => {
     ).toMatchInlineSnapshot(`
     Object {
       "bumpType": "major",
-      "commitMessagesByNoteRule": Object {
+      "commitsByRule": Object {
         "major": Array [
           "add new feature
     config was removed",
@@ -222,7 +222,7 @@ test('BREAKING gives major on unstable', async () => {
     ).toMatchInlineSnapshot(`
     Object {
       "bumpType": "minor",
-      "commitMessagesByNoteRule": Object {
+      "commitsByRule": Object {
         "major": Array [
           "add new feature
     config was removed",
@@ -276,7 +276,7 @@ Tests were hard to fix`
     ).toMatchInlineSnapshot(`
     Object {
       "bumpType": "minor",
-      "commitMessagesByNoteRule": Object {
+      "commitsByRule": Object {
         "minor": Array [
           "Add new feature within commit
     Description",
