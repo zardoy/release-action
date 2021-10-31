@@ -42,7 +42,7 @@ import * as testingPreset from './testingPreset'
                 return vscodePreset
 
             // @ts-expect-error hidden presset
-            case 'testings':
+            case 'testing':
                 return testingPreset
 
             default: {
