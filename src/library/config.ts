@@ -52,8 +52,13 @@ export interface Config {
      * @default By default it would always publish
      */
     // TODO
-    requirePublishKeyword: boolean | RegExp
+    // requirePublishKeyword: boolean | RegExp
     linksToSameCommit: boolean
+    /** Changelog generator config */
+    changelog: {
+        /** now affects only headings style */
+        style: 'default' /*  | 'emoji' */
+    }
     /** how to order notes by date of the commit. just reverses in case of `desc` */
     // notesOrder: 'asc-by-date' | 'desc-by-date'
 }
@@ -65,7 +70,10 @@ export const defaultConfig: Config = {
     },
     bumpingVersionStrategy: 'semverUnstable',
     plugins: builtinPlugins,
-    requirePublishKeyword: false,
+    changelog: {
+        style: 'default',
+    },
+    // requirePublishKeyword: false,
     // notesOrder: 'asc-by-date',
     linksToSameCommit: true,
 }

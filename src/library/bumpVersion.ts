@@ -275,7 +275,7 @@ export const getNextVersionAndReleaseNotesFromTag = async ({
                 // releaseNotes[notesRule]!.push({ message: processCommitMessage(rawMessage), scope })
                 const message = processCommitMessage(rawMessage, commitSha)
                 // commit sha undefined mostly on testing
-                releaseNotes[notesRule]!.push(scope ? `**${scope}**: ${message}` : message)
+                releaseNotes[notesRule]!.push(scope ? `**${scope.slice(1, -1)}**: ${message}` : message)
                 if (bumpLevel < resolvedBumpLevel) continue
                 resolvedBumpLevel = bumpLevel
             }

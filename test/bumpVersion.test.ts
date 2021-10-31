@@ -135,10 +135,12 @@ test("Doesn't pick commits below version", async () => {
                         message: 'feat: should not be here',
                         sha: '123',
                     },
+
                     {
                         message: 'feat: should not be here',
                         sha: '3213',
                     },
+
                     'feat: something else',
                 ],
             ),
@@ -267,12 +269,12 @@ test('Extracts scopes correctly', async () => {
         "major": Array [
           "add new feature
     config was removed",
-          "**(button)**: just adding feature
+          "**button**: just adding feature
     we broke anything",
         ],
         "patch": Array [
           "fix serious issue",
-          "**(library-action)**: first fixes",
+          "**library-action**: first fixes",
         ],
       },
       "nextVersion": "0.1.0",
