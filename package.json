@@ -1,6 +1,6 @@
 {
-    "name": "semantic-release2",
-    "version": "0.0.2",
+    "name": "zardoy-release",
+    "version": "0.0.1",
     "bin": "build/bin.js",
     "repository": "https://github.com/zardoy/publish-action.git",
     "author": "Vitaly Turovsky <vital2580@icloud.com>",
