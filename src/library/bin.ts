@@ -4,8 +4,8 @@ import { modifyPackageJsonFile } from 'modify-json-file'
 import { getNextVersionAndReleaseNotes } from './bumpVersion'
 import { generateChangelog } from './changelogGenerator'
 import { defaultConfig, GlobalPreset, presetConfigOverrides } from './config'
-import * as npmPreset from './npmPreset'
-import * as vscodePreset from './vscodePreset'
+import * as npmPreset from './presets/npm'
+import * as vscodePreset from './presets/vscode-extension'
 import * as testingPreset from './testingPreset'
 ;(async () => {
     if (!process.env.GITHUB_TOKEN) throw new Error('GITHUB_TOKEN is not defined. Make sure you pass it via env from GitHub action')

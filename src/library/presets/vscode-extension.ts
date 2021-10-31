@@ -1,17 +1,13 @@
 import fs from 'fs'
 import { join, posix } from 'path'
 import execa from 'execa'
-import { markdownRemoveHeading } from './readmeUtils'
+import { markdownRemoveHeading } from '../readmeUtils'
+import { runTests, safeExeca } from './shared'
 // always pnpm is used in this preset
 
 export const main = async ({ repoUrl }: { repoUrl: string }) => {
-    await execa('pnpm', ['vscode-framework', 'build'], {
-        extendEnv: false,
-        env: {
-            CI: process.env.CI,
-        } as any,
-    })
-    // use npm lib
+    await safeExeca('pnpm', 'vscode-framework build')
+    await runTests()
     const copyFiles = ['LICENSE']
 
     const CHANGELOG_CONTENT = `# Changelog\nChangelog will go here in future releases. For now you can view [changelog at GitHub](${posix.join(
@@ -28,7 +24,7 @@ export const main = async ({ repoUrl }: { repoUrl: string }) => {
     // even if not on CI, updates to latest version
     await execa('pnpm', 'i -g vsce'.split(' '))
     const vsisPath = 'output.vsix'
-    await execa('vsce', ['package', '--out', vsisPath])
+    await safeExeca('vsce', ['package', '--out', vsisPath])
     const SIZE_LIMIT = 3 * 1024 * 1024 // 3 MG
     if ((await fs.promises.stat(vsisPath)).size > SIZE_LIMIT) throw new Error('SIZE_LIMIT exceeded in 3 MG')
     await execa('vsce', ['publich', '--packagePath', vsisPath])

@@ -1,11 +1,11 @@
 import { existsSync } from 'fs'
 import { join } from 'path'
 import execa from 'execa'
-import { getGithubRemoteInfo } from 'github-remote-info'
 import { defaultsDeep } from 'lodash'
 import { modifyPackageJsonFile } from 'modify-json-file'
 import { PackageJson } from 'type-fest'
 import { readPackageJsonFile } from 'typed-jsonfile'
+import { runTests, safeExeca } from './shared'
 
 export const main = async ({ repoUrl }: { repoUrl: string }) => {
     const cwd = process.cwd()
@@ -26,14 +26,11 @@ export const main = async ({ repoUrl }: { repoUrl: string }) => {
     })
 
     const packageJson = await readPackageJsonFile({ dir: '.' })
-    if (packageJson.scripts?.build)
-        await execa('npm', ['run', 'build'], {
-            extendEnv: false,
-            env: {
-                CI: process.env.CI,
-            } as any,
-        })
+    if (packageJson.scripts?.build) await safeExeca('pnpm', 'run build')
     else if (!packageJson.scripts?.prepublishOnly) throw new Error('Nothing to build, specify script first (prepublishOnly or build)')
+
+    // not really great as it runs before prepublishOnly
+    await runTests()
 
     validatePaths(process.cwd(), await readPackageJsonFile({ dir: process.cwd() }))
 
