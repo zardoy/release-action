@@ -20,7 +20,6 @@ export const markdownRemoveHeading = async (markdown: string, headingToRemove: s
             return rootNode => {
                 //@ts-expect-error TODO update remark when esm issues with jest are resolved
                 const { children } = rootNode
-                // children.splice(0, 1)
                 const headingToRemoveIndex = children.findIndex(node => {
                     if (node.type !== 'heading' || node.depth !== 2) return false
                     const headingText = node.children[0]!

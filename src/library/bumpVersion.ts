@@ -1,5 +1,5 @@
-import { Octokit, RestEndpointMethodTypes } from '@octokit/rest'
-import { ReleaseType, major, inc as bumpVersion } from 'semver'
+import { Octokit } from '@octokit/rest'
+import { inc as bumpVersion, major, ReleaseType } from 'semver'
 import { Config } from './config'
 import { OctokitRepo } from './types'
 
@@ -7,7 +7,7 @@ export type SemverVersionString = `${number}.${number}.${number}` | `${number}.$
 
 type BasicReleaseType = 'patch' | 'minor' | 'major'
 
-interface NotesRule {
+export interface NotesRule {
     groupTitle: string
     stripScope?: boolean
     /** PR, otherwise commit linked issue, otherwise commit if commit is empty - nothing */
@@ -26,22 +26,8 @@ const notesRulesDefaults: Required<Pick<NotesRule, OptionalPropertyOf<NotesRule>
     noteLink: true,
 }
 
-const notesRules: Record<string, Record<string, NotesRule>> = {
-    default: {
-        patch: {
-            groupTitle: 'Bug Fixes',
-        },
-        minor: {
-            groupTitle: 'New Features',
-        },
-        major: {
-            groupTitle: 'BREAKING CHANGES',
-        },
-    },
-}
-
 interface VersionRule {
-    regex: RegExp
+    matches: RegExp | { conventionalType: string }
     startsNew: boolean
     bump: false | ReleaseType
     stripByRegex?: boolean
@@ -52,17 +38,17 @@ interface VersionRule {
 const versionRules: VersionRule[] = [
     // TODO skip release
     {
-        regex: /^fix:/,
+        matches: { conventionalType: 'fix' },
         startsNew: true,
         bump: 'patch',
     },
     {
-        regex: /^feat:/,
+        matches: { conventionalType: 'feat' },
         startsNew: true,
         bump: 'minor',
     },
     {
-        regex: /BREAKING( CHANGE)?/,
+        matches: /BREAKING( CHANGE)?:?/,
         startsNew: false,
         bump: 'major',
     },
@@ -119,14 +105,16 @@ type BumpVersionParams = {
     config: Config
 }
 
-interface NextVersionReturn {
+export interface NextVersionReturn {
     bumpType: BasicReleaseType | 'none'
     /** undefined - version is the same */
     nextVersion: string | undefined
-    /** `{[noteRule: string]: commitMessages[]}` */
-    commitMessagesByNoteRule: {
-        [noteRule: string]: string[]
-    }
+    commitsByRule:
+        | {
+              //   [noteRule: string]: { message: string; scope?: string }[]
+              [noteRule: string]: string[]
+          }
+        | { rawOverride: string }
 }
 
 /** DEFAULT. wrapper to use latest tag is present */
@@ -140,7 +128,7 @@ export const getNextVersionAndReleaseNotes = async ({ octokit, repo, config }: B
         return {
             bumpType: 'none',
             nextVersion: config.initialVersion.version,
-            commitMessagesByNoteRule: { rawOverride: [config.initialVersion.releaseNotes] },
+            commitsByRule: { rawOverride: config.initialVersion.releaseNotes },
         }
     } else {
         const latestTag = tags[0]!
@@ -164,26 +152,26 @@ export const getNextVersionAndReleaseNotesFromTag = async ({
     config,
 }: // addCommitLink = true,
 { tag: Record<'version' | 'commitSha', string> /* addCommitLink?: boolean */ } & BumpVersionParams): Promise<NextVersionReturn> => {
-    let commits: { sha: string; commit: { message: string } }[] = []
+    let commits: { sha?: string; commit: { message: string } }[] = []
     for (let i = 1; true; i++) {
         const { data: justFetchedCommits } = await octokit.repos.listCommits({
             ...repo,
+            // i don't think it matters: 30 or 100
+            per_page: 100,
             page: i,
         })
         commits = [...commits, ...justFetchedCommits]
         const tagCommitIndex = justFetchedCommits.findIndex(c => c.sha === tagCommitSha)
         if (tagCommitIndex === -1) continue
         const commitsBeforeTag = commits.slice(0, commits.length - justFetchedCommits.length + tagCommitIndex)
-        const commitMessagesBeforeTag = commitsBeforeTag.map(c => c.commit.message)
+        const commitMessagesBeforeTag = commitsBeforeTag.map(c => ({ message: c.commit.message, sha: c.sha }))
         /** But before strategy resolve */
         let resolvedBumpLevel = 0
-        const releaseNotes: NextVersionReturn['commitMessagesByNoteRule'] = {}
-        const processCommitMessage = (message: string) => {
+        const releaseNotes: NextVersionReturn['commitsByRule'] = {}
+        const processCommitMessage = (message: string, sha?: string) => {
             let prNumber: string | undefined
             let closesIssues = [] as number[]
             message = message
-                // remove conventional format part (before :)
-                .replace(/^(\S+\s?)?\w+:/, '')
                 // too weak detection
                 .replace(/\(#(\d+)\)$/, (_, num) => {
                     prNumber = num
@@ -202,24 +190,35 @@ export const getNextVersionAndReleaseNotesFromTag = async ({
             if (prNumber) message += `(${prNumber})`
             else if (closesIssues.length) message += ` (${closesIssues.map(n => `#${n}`).join(', ')})`
 
+            if (sha) message += `[\`${sha.slice(0, 7)}\`](https://github.com/${repo.owner}/${repo.repo}/commit/${sha})`
+
             return message.trim()
         }
+        /** 1st group - type, 2nd - scope */
+        const conventionalRegex = /^(?:\S+\s)?(\w+)(\(\S+\))?:/
         // TODO config.linksToSameCommit
-        commit: for (const commitMessage of commitMessagesBeforeTag) {
-            const bumps: Array<{ bumpLevel: number; notesRule: string; rawMessage: string }> = []
+        commit: for (const { message: commitMessage, sha: commitSha } of commitMessagesBeforeTag) {
+            const bumps: Array<{ bumpLevel: number; notesRule: string; rawMessage: string; scope?: string }> = []
             let lineNumber = -1
             /** if true, add message to last `bumps` */
             let lastSatisfies = false
             for (const commitMessageLine of commitMessage.split('\n')) {
                 lineNumber++
-                let isConventionalCommitMessage = /^(\S+\s?)?\w+:/.test(commitMessageLine)
+                let isConventionalCommitMessage = conventionalRegex.test(commitMessageLine)
+                conventionalRegex.lastIndex = 0
                 let currentBump = {
                     bumpLevel: 0,
                     notesRule: null as null | string,
                     versionRule: null! as VersionRule,
                 }
                 for (const versionRule of versionRules) {
-                    if (!commitMessageLine.match(versionRule.regex)) continue
+                    if ('conventionalType' in versionRule.matches) {
+                        const [, type] = conventionalRegex.exec(commitMessageLine) || []
+                        conventionalRegex.lastIndex = 0
+                        if (type !== versionRule.matches.conventionalType) continue
+                    } else {
+                        if (!commitMessageLine.match(versionRule.matches)) continue
+                    }
                     // TODO cancel bumping of commitMessageLine, not whole commit
                     if (versionRule.bump === false) continue commit
                     const notesRule = versionRule.notesRule ?? versionRule.bump
@@ -242,12 +241,20 @@ export const getNextVersionAndReleaseNotesFromTag = async ({
                 }
                 const { bumpLevel, notesRule, versionRule } = currentBump
                 lastSatisfies = true
-                let rawMessage = versionRule.stripByRegex ?? true ? commitMessageLine.replace(versionRule.regex, '') : commitMessageLine
+                // TODO config.linksToSameCommit
+                // TODO move it to top
+                const scope = conventionalRegex.exec(commitMessage)?.[2]
+                conventionalRegex.lastIndex = 0
+                let rawMessage = commitMessageLine
+                if (versionRule.stripByRegex ?? true) {
+                    rawMessage = rawMessage.replace(versionRule.matches instanceof RegExp ? versionRule.matches : conventionalRegex, '')
+                }
                 if (versionRule.startsNew || bumps.length === 0) {
                     bumps.push({
                         bumpLevel,
                         notesRule,
                         rawMessage,
+                        scope,
                     })
                 } else {
                     const lastBump = bumps.slice(-1)[0]!
@@ -259,9 +266,12 @@ export const getNextVersionAndReleaseNotesFromTag = async ({
                     })
                 }
             }
-            for (const { bumpLevel, notesRule, rawMessage } of bumps) {
+            for (const { bumpLevel, notesRule, rawMessage, scope } of bumps) {
                 if (!releaseNotes[notesRule]) releaseNotes[notesRule] = []
-                releaseNotes[notesRule]!.push(processCommitMessage(rawMessage))
+                // releaseNotes[notesRule]!.push({ message: processCommitMessage(rawMessage), scope })
+                const message = processCommitMessage(rawMessage, commitSha)
+                // commit sha undefined mostly on testing
+                releaseNotes[notesRule]!.push(scope ? `**${scope}**: ${message}` : message)
                 if (bumpLevel < resolvedBumpLevel) continue
                 resolvedBumpLevel = bumpLevel
             }
@@ -284,7 +294,7 @@ export const getNextVersionAndReleaseNotesFromTag = async ({
         return {
             bumpType,
             nextVersion,
-            commitMessagesByNoteRule: releaseNotes,
+            commitsByRule: releaseNotes,
         }
     }
 }

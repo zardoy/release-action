@@ -239,6 +239,44 @@ test('BREAKING gives major on unstable', async () => {
   `)
 })
 
+test('Extracts scopes correctly', async () => {
+    expect(
+        await getNextVersionAndReleaseNotes({
+            octokit: getMockedOctokit(
+                [{ name: 'v0.0.7', commit: { sha: '123' } }],
+                [
+                    'fix: fix serious issue\nfeat: add new feature\nBREAKING config was removed',
+                    'feat(button): just adding feature\nBREAKING we broke anything',
+                    'fix(library-action): first fixes',
+                    {
+                        message: 'feat: should not be here',
+                        sha: '123',
+                    },
+                ],
+            ),
+
+            ...args,
+        }),
+    ).toMatchInlineSnapshot(`
+    Object {
+      "bumpType": "minor",
+      "commitsByRule": Object {
+        "major": Array [
+          "add new feature
+    config was removed",
+          "**(button)**: just adding feature
+    we broke anything",
+        ],
+        "patch": Array [
+          "fix serious issue",
+          "**(library-action)**: first fixes",
+        ],
+      },
+      "nextVersion": "0.1.0",
+    }
+  `)
+})
+
 // give better name to the test?
 test('Operates on description properly', async () => {
     const includeCommit = `
@@ -297,7 +335,7 @@ Tests were hard to fix`
 })
 
 test('Pick all commits even if they are > 100', async () => {
-    const { commitMessagesByNoteRule } = await getNextVersionAndReleaseNotes({
+    const { commitsByRule } = await getNextVersionAndReleaseNotes({
         octokit: {
             repos: {
                 async listTags() {
@@ -326,6 +364,6 @@ test('Pick all commits even if they are > 100', async () => {
         } as any,
         ...args,
     })
-    expect(commitMessagesByNoteRule['patch']).toHaveLength(100)
-    expect(commitMessagesByNoteRule['minor']).toHaveLength(100)
+    expect(commitsByRule['patch']).toHaveLength(100)
+    expect(commitsByRule['minor']).toHaveLength(100)
 })
