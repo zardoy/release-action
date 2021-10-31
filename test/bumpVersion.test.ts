@@ -336,6 +336,39 @@ test("Extracts sha's correctly", async () => {
   `)
 })
 
+// TODO move to scopes correctly
+test('Test from GitHub 1', async () => {
+    expect(
+        await getNextVersionAndReleaseNotes({
+            octokit: getMockedOctokit(
+                [{ name: 'v0.0.7', commit: { sha: '123' } }],
+                [
+                    "fix: some things\nfeat(button): we're insane!\nNote: yes, we are!\n",
+                    {
+                        message: 'feat: should not be here',
+                        sha: '123',
+                    },
+                ],
+            ),
+
+            ...args,
+        }),
+    ).toMatchInlineSnapshot(`
+    Object {
+      "bumpType": "patch",
+      "commitsByRule": Object {
+        "minor": Array [
+          "**button**: we're insane!",
+        ],
+        "patch": Array [
+          "some things",
+        ],
+      },
+      "nextVersion": "0.0.8",
+    }
+  `)
+})
+
 // give better name to the test?
 test('Operates on description properly', async () => {
     const includeCommit = `

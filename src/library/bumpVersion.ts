@@ -265,7 +265,7 @@ export const getNextVersionAndReleaseNotesFromTag = async ({
                 lastSatisfies = true
                 // TODO config.linksToSameCommit
                 // TODO move it to top
-                const scope = conventionalRegex.exec(commitMessage)?.[2]
+                const scope = conventionalRegex.exec(commitMessageLine)?.[2]
                 conventionalRegex.lastIndex = 0
                 let rawMessage = commitMessageLine
                 if (versionRule.stripByRegex ?? true)
