@@ -1,23 +1,23 @@
-import execa from 'execa'
 import { existsSync } from 'fs'
+import { join } from 'path'
+import execa from 'execa'
 import { getGithubRemoteInfo } from 'github-remote-info'
 import { defaultsDeep } from 'lodash'
 import { modifyPackageJsonFile } from 'modify-json-file'
-import { join } from 'path'
 import { PackageJson } from 'type-fest'
 import { readPackageJsonFile } from 'typed-jsonfile'
 
-export const main = async () => {
+export const main = async ({ repoUrl }: { repoUrl: string }) => {
     const cwd = process.cwd()
     // PREPARE package.json
-    const info = await getGithubRemoteInfo(cwd)
-    if (!info) throw new Error('Init repository first!')
+    // const info = await getGithubRemoteInfo(cwd)
+    // if (!info) throw new Error('Init repository first!')
     await modifyPackageJsonFile({ dir: cwd }, packageJson => {
         const defaults: PackageJson = {
             types: 'build/index.d.ts',
             main: 'build/index.js',
             files: ['build'],
-            repository: `https://github.com/${info.owner}/${info.name}`,
+            repository: repoUrl,
             // TODO investigate author
         }
         packageJson = defaultsDeep(packageJson, defaults)
@@ -25,12 +25,16 @@ export const main = async () => {
         return packageJson
     })
 
-    await execa('npm', ['run', 'build'], {
-        extendEnv: false,
-        env: {
-            CI: process.env.CI,
-        } as any,
-    })
+    const packageJson = await readPackageJsonFile({ dir: '.' })
+    if (packageJson.scripts?.build)
+        await execa('npm', ['run', 'build'], {
+            extendEnv: false,
+            env: {
+                CI: process.env.CI,
+            } as any,
+        })
+    else if (!packageJson.scripts?.prepublishOnly) throw new Error('Nothing to build, specify script first (prepublishOnly or build)')
+
     validatePaths(process.cwd(), await readPackageJsonFile({ dir: process.cwd() }))
 
     await execa('npm', ['publish', '--access', 'public'], {
@@ -41,11 +45,8 @@ export const main = async () => {
 }
 
 const validatePaths = (cwd: string, json) => {
-    if (json.bin && typeof json.bin === 'string') {
-        if (!existsSync(join(cwd, json.bin))) throw new Error('no bin!')
-    }
+    if (json.bin && typeof json.bin === 'string' && !existsSync(join(cwd, json.bin))) throw new Error('no bin!')
+
     // TODO isn't it already checked by npm?
-    for (const path of json.build) {
-        if (!existsSync(join(cwd, path))) throw new Error('No build to publish')
-    }
+    for (const path of json.build) if (!existsSync(join(cwd, path))) throw new Error('No build to publish')
 }

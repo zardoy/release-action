@@ -1,10 +1,10 @@
 import fs from 'fs'
+import { join, posix } from 'path'
 import execa from 'execa'
 import { markdownRemoveHeading } from './readmeUtils'
-import { join } from 'path'
 // always pnpm is used in this preset
 
-export const main = async () => {
+export const main = async ({ repoUrl }: { repoUrl: string }) => {
     await execa('pnpm', ['vscode-framework', 'build'], {
         extendEnv: false,
         env: {
@@ -13,9 +13,13 @@ export const main = async () => {
     })
     // use npm lib
     const copyFiles = ['LICENSE']
-    for (const file of copyFiles) {
-        await fs.promises.copyFile(file, join('out', file))
-    }
+
+    const CHANGELOG_CONTENT = `# Changelog\nChangelog will go here in future releases. For now you can view [changelog at GitHub](${posix.join(
+        repoUrl,
+        'releases',
+    )})`
+    await fs.promises.writeFile('./out/CHANGELOG.MD', CHANGELOG_CONTENT, 'utf-8')
+    for (const file of copyFiles) await fs.promises.copyFile(file, join('out', file))
 
     // specify target
     const readme = await fs.promises.readFile('./README.MD', 'utf-8')

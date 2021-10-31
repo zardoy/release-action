@@ -1,8 +1,7 @@
 {
     "name": "semantic-release2",
     "version": "0.0.2",
-    "main": "build/index.js",
-    "types": "build/index.d.ts",
+    "bin": "build/bin.js",
     "repository": "https://github.com/zardoy/publish-action.git",
     "author": "Vitaly Turovsky <vital2580@icloud.com>",
     "license": "MIT",
@@ -11,7 +10,8 @@
         "build"
     ],
     "scripts": {
-        "postinstall": "husky install"
+        "postinstall": "husky install",
+        "prepublishOnly": "tsc"
     },
     "dependencies": {
         "@octokit/rest": "^18.12.0",
@@ -20,7 +20,6 @@
         "lodash": "^4.17.21",
         "modify-json-file": "^1.2.1",
         "remark": "13",
-        "semantic-release": "^18.0.0",
         "semver": "^7.3.5",
         "ts-node": "^10.4.0",
         "typed-jsonfile": "^0.1.1"
@@ -28,6 +27,7 @@
     "devDependencies": {
         "@babel/cli": "^7.16.0",
         "@babel/core": "^7.16.0",
+        "eslint-plugin-zardoy-config": "^0.1.1",
         "@babel/preset-env": "^7.16.0",
         "@babel/preset-typescript": "^7.16.0",
         "@types/jest": "^27.0.2",
@@ -38,6 +38,7 @@
         "@zardoy/tsconfig": "^1.2.2",
         "esbuild": "^0.13.11",
         "esbuild-runner": "^2.2.1",
+        "eslint": "7",
         "husky": "^7.0.4",
         "jest": "^27.3.1",
         "prettier": "^2.4.1",
