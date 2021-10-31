@@ -1,6 +1,6 @@
 {
     "name": "zardoy-release",
-    "version": "0.0.5",
+    "version": "0.0.6",
     "bin": "build/bin.js",
     "repository": "https://github.com/zardoy/publish-action.git",
     "author": "Vitaly Turovsky <vital2580@icloud.com>",
