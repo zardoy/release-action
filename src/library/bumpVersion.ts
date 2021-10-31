@@ -1,5 +1,7 @@
 import { Octokit } from '@octokit/rest'
-import { inc as bumpVersion, major, ReleaseType } from 'semver'
+import got from 'got/dist/source'
+import { inc as bumpVersion, major, ReleaseType, gt } from 'semver'
+import { readPackageJsonFile } from 'typed-jsonfile'
 import { Config } from './config'
 import { OctokitRepo } from './types'
 
@@ -17,7 +19,7 @@ export interface NotesRule {
     // noteLink?: boolean
 }
 
-type OptionalPropertyOf<T extends object> = Exclude<
+type OptionalPropertyOf<T extends Record<string, unknown>> = Exclude<
     {
         [K in keyof T]: T extends Record<K, T[K]> ? never : K
     }[keyof T],
@@ -128,23 +130,38 @@ export const getNextVersionAndReleaseNotes = async ({ octokit, repo, config }: B
     })
     const noTags = tags.length === 0
     if (noTags) {
+        const { name, private: pkgPrivate, version: currentVersion } = await readPackageJsonFile({ dir: '.' })
+        if (!pkgPrivate)
+            // Tries to fetch latest version from npm. Thanks to fast jsdelivr
+            try {
+                const {
+                    body: { version: latestVersionOnNpm },
+                } = await got(`https://cdn.jsdelivr.net/npm/${name!}/package.json`, { responseType: 'json' })
+                if (!gt(currentVersion!, latestVersionOnNpm)) throw new Error('When no tags found, version in package.json must be greater than that on NPM')
+                return {
+                    bumpType: 'none',
+                    nextVersion: currentVersion,
+                    commitsByRule: { rawOverride: config.initialVersion.releaseNotesWithExisting },
+                }
+            } catch {}
+
         return {
             bumpType: 'none',
             nextVersion: config.initialVersion.version,
             commitsByRule: { rawOverride: config.initialVersion.releaseNotes },
         }
-    } else {
-        const latestTag = tags[0]!
-        return await getNextVersionAndReleaseNotesFromTag({
-            tag: {
-                version: latestTag.name.slice(1),
-                commitSha: latestTag.commit.sha,
-            },
-            octokit,
-            repo,
-            config,
-        })
     }
+
+    const latestTag = tags[0]!
+    return getNextVersionAndReleaseNotesFromTag({
+        tag: {
+            version: latestTag.name.slice(1),
+            commitSha: latestTag.commit.sha,
+        },
+        octokit,
+        repo,
+        config,
+    })
 }
 
 /** use with fetched tag */
@@ -155,7 +172,7 @@ export const getNextVersionAndReleaseNotesFromTag = async ({
     config,
 }: // addCommitLink = true,
 { tag: Record<'version' | 'commitSha', string> /* addCommitLink?: boolean */ } & BumpVersionParams): Promise<NextVersionReturn> => {
-    let commits: { sha?: string; commit: { message: string } }[] = []
+    let commits: Array<{ sha?: string; commit: { message: string } }> = []
     for (let i = 1; true; i++) {
         const { data: justFetchedCommits } = await octokit.repos.listCommits({
             ...repo,
@@ -173,7 +190,7 @@ export const getNextVersionAndReleaseNotesFromTag = async ({
         const releaseNotes: NextVersionReturn['commitsByRule'] = {}
         const processCommitMessage = (message: string, sha?: string) => {
             let prNumber: string | undefined
-            let closesIssues = [] as number[]
+            const closesIssues = [] as number[]
             message = message
                 // too weak detection
                 .replace(/\(#(\d+)\)$/, (_, num) => {
@@ -185,19 +202,20 @@ export const getNextVersionAndReleaseNotesFromTag = async ({
                     return ''
                 })
                 // strip two empty lines into one
-                .replace(/\n\n\n/g, '\n\n')
+                .replace(/\n{3}/g, '\n\n')
                 // strip whitespaces on every line
                 .split('\n')
                 .map(str => str.trim())
                 .join('\n')
             if (prNumber) message += ` (#${prNumber})`
-            else if (closesIssues.length) message += ` (${closesIssues.map(n => `#${n}`).join(', ')})`
+            else if (closesIssues.length > 0) message += ` (${closesIssues.map(n => `#${n}`).join(', ')})`
 
             if (sha && !prNumber && closesIssues.length === 0)
                 message += ` ([\`${sha.slice(0, 7)}\`](https://github.com/${repo.owner}/${repo.repo}/commit/${sha}))`
 
             return message.trim()
         }
+
         /** 1st group - type, 2nd - scope */
         const conventionalRegex = /^(?:\S+\s)?(\w+)(\(\S+\))?:/
         // TODO config.linksToSameCommit
@@ -208,7 +226,7 @@ export const getNextVersionAndReleaseNotesFromTag = async ({
             let lastSatisfies = false
             for (const commitMessageLine of commitMessage.split('\n')) {
                 lineNumber++
-                let isConventionalCommitMessage = conventionalRegex.test(commitMessageLine)
+                const isConventionalCommitMessage = conventionalRegex.test(commitMessageLine)
                 conventionalRegex.lastIndex = 0
                 let currentBump = {
                     bumpLevel: 0,
@@ -234,15 +252,15 @@ export const getNextVersionAndReleaseNotesFromTag = async ({
                         versionRule,
                     }
                 }
+
                 if (!currentBump.notesRule) {
-                    if (isConventionalCommitMessage) {
-                        lastSatisfies = false
-                    } else {
-                        // TODO continue to use .at when node versions are resolved
-                        if (lastSatisfies) bumps.slice(-1)[0]!.rawMessage += `\n${commitMessageLine}`
-                    }
+                    if (isConventionalCommitMessage) lastSatisfies = false
+                    // TODO continue to use .at when node versions are resolved
+                    else if (lastSatisfies) bumps.slice(-1)[0]!.rawMessage += `\n${commitMessageLine}`
+
                     continue
                 }
+
                 const { bumpLevel, notesRule, versionRule } = currentBump
                 lastSatisfies = true
                 // TODO config.linksToSameCommit
@@ -250,9 +268,9 @@ export const getNextVersionAndReleaseNotesFromTag = async ({
                 const scope = conventionalRegex.exec(commitMessage)?.[2]
                 conventionalRegex.lastIndex = 0
                 let rawMessage = commitMessageLine
-                if (versionRule.stripByRegex ?? true) {
+                if (versionRule.stripByRegex ?? true)
                     rawMessage = rawMessage.replace(versionRule.matches instanceof RegExp ? versionRule.matches : conventionalRegex, '')
-                }
+
                 if (versionRule.startsNew || bumps.length === 0) {
                     bumps.push({
                         bumpLevel,
@@ -262,14 +280,15 @@ export const getNextVersionAndReleaseNotesFromTag = async ({
                     })
                 } else {
                     const lastBump = bumps.slice(-1)[0]!
-                    bumps.splice(bumps.length - 1, 1, {
+                    bumps.splice(-1, 1, {
                         ...lastBump,
                         bumpLevel,
                         notesRule,
-                        rawMessage: lastBump.rawMessage + '\n' + rawMessage,
+                        rawMessage: `${lastBump.rawMessage}\n${rawMessage}`,
                     })
                 }
             }
+
             for (const { bumpLevel, notesRule, rawMessage, scope } of bumps) {
                 if (!releaseNotes[notesRule]) releaseNotes[notesRule] = []
                 // releaseNotes[notesRule]!.push({ message: processCommitMessage(rawMessage), scope })
@@ -280,6 +299,7 @@ export const getNextVersionAndReleaseNotesFromTag = async ({
                 resolvedBumpLevel = bumpLevel
             }
         }
+
         // TODO respect order config with l
         let nextVersion: undefined | string
         let bumpType = getBumpTypeByPriority(resolvedBumpLevel)
@@ -291,10 +311,12 @@ export const getNextVersionAndReleaseNotesFromTag = async ({
                 bumpType = strategyConfig[bumpType]
             }
         }
+
         if (bumpType !== 'none') {
             nextVersion = bumpVersion(tagVersion, bumpType)!
             if (nextVersion === null) throw new Error('Just bumped version is invalid')
         }
+
         return {
             bumpType,
             nextVersion,

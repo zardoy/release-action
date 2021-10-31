@@ -45,6 +45,8 @@ export interface Config {
     initialVersion: {
         version: SemverVersionString
         releaseNotes: string
+        /** but when already was on NPM, but first tag */
+        releaseNotesWithExisting: string
     }
     bumpingVersionStrategy: 'none' | keyof typeof versionBumpingStrategies
     plugins: Record<string, Plugin.Plugin>
@@ -67,6 +69,7 @@ export const defaultConfig: Config = {
     initialVersion: {
         version: '0.0.1',
         releaseNotes: '🎉 Initial release',
+        releaseNotesWithExisting: '🎉 First publish with automatic release tool',
     },
     bumpingVersionStrategy: 'semverUnstable',
     plugins: builtinPlugins,

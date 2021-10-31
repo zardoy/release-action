@@ -25,7 +25,15 @@ TODO: allow without message
 
 > But its not possible to combine them or with them. e.g. this would fail: `WIP [publish]`
 
+# Why not `semantic-release`
+
+- seamless integration with existing packages e.g. would fetch latest version from npm instead of starting with `v1.0.0` of no tags found
+<!-- TODO in case of failure  -->
+- starts `v0.0.1` instead of making your package stable by default and remains to hold your package unstable (bumps minor only on BREAKING), until you mark as stable by special flag (see above)
+- runs test / linter / build for you only `test` and `build` scripts must be present. Linter script would be opinionated
+
 ## TODO
 
 - prerelease
 - contribution channels
+- support `!` as BREAKING

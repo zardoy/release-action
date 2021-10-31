@@ -1,5 +1,6 @@
 /// <reference types="jest" />
 import { Octokit } from '@octokit/rest'
+import typedJsonFile from 'typed-jsonfile'
 import { getNextVersionAndReleaseNotes } from '../src/library/bumpVersion'
 import { defaultConfig } from '../src/library/config'
 
@@ -29,9 +30,17 @@ const args = {
     repo: dummyRepo,
 }
 
+const mockPackageJsonOnce = (packageJson: Record<string, any>) => {
+    const spy = jest.spyOn(typedJsonFile, 'readPackageJsonFile')
+    spy.mockResolvedValueOnce(JSON.parse(JSON.stringify(packageJson)))
+}
+
 // TODO try to extract to fixtures for reuse
 
 test('Initial release', async () => {
+    mockPackageJsonOnce({
+        private: true,
+    })
     expect(
         await getNextVersionAndReleaseNotes({
             octokit: getMockedOctokit([], ['feat: something added']),

@@ -26,6 +26,7 @@ export const main = async ({ repoUrl }: { repoUrl: string }) => {
     })
 
     const packageJson = await readPackageJsonFile({ dir: '.' })
+    if (packageJson.private) throw new Error("Packages that are going to publish can't be private")
     if (packageJson.scripts?.build) await safeExeca('pnpm', 'run build')
     else if (!packageJson.scripts?.prepublishOnly) throw new Error('Nothing to build, specify script first (prepublishOnly or build)')
 

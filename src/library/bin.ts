@@ -9,7 +9,8 @@ import * as vscodePreset from './presets/vscode-extension'
 import * as testingPreset from './testingPreset'
 ;(async () => {
     if (!process.env.GITHUB_TOKEN) throw new Error('GITHUB_TOKEN is not defined. Make sure you pass it via env from GitHub action')
-    const preset = (process.argv[2] || 'npm') as GlobalPreset
+    const preset = process.argv[2] as GlobalPreset
+    if (!preset) throw new Error('Preset must be defined!')
     // TODO cosmiconffig
     const config = defaultsDeep(presetConfigOverrides[preset], defaultConfig)
     const [owner, repoName] = process.env.GITHUB_REPOSITORY!.split('/')
