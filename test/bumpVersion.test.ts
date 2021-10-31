@@ -37,10 +37,8 @@ test('Initial release', async () => {
     ).toMatchInlineSnapshot(`
     Object {
       "bumpType": "none",
-      "commitMessagesByNoteRule": Object {
-        "rawOverride": Array [
-          "🎉 Initial release",
-        ],
+      "commitsByRule": Object {
+        "rawOverride": "🎉 Initial release",
       },
       "nextVersion": "0.0.1",
     }
@@ -54,8 +52,10 @@ test('Just bumps correctly', async () => {
                 [{ name: 'v0.0.9', commit: { sha: '123' } }],
                 [
                     'fix: fix serious issue\nfeat: add new feature',
-                    'feat: just adding feature',
-                    'fix: first fixes',
+                    // TODO should be published only at this point
+                    '[publish] feat: just adding feature',
+                    // just ignored
+                    'WIP fix: first fixes',
                     {
                         message: 'feat: should not be here',
                         sha: '123',
@@ -294,4 +294,38 @@ Tests were hard to fix`
       "nextVersion": "1.1.0",
     }
   `)
+})
+
+test('Pick all commits even if they are > 100', async () => {
+    const { commitMessagesByNoteRule } = await getNextVersionAndReleaseNotes({
+        octokit: {
+            repos: {
+                async listTags() {
+                    return { data: [{ name: 'v0.0.1', commit: { sha: '123' } }] }
+                },
+                async listCommits({ page }) {
+                    let commits: { sha: string; commit: { message: string } }[] = []
+                    if (page === 1) {
+                        commits = Array.from({ length: 100 }, (_, i) => ({
+                            commit: { message: `fix: ${i}` },
+                            sha: '',
+                        }))
+                    } else if (page === 2) {
+                        commits = Array.from({ length: 100 }, (_, i) => ({
+                            commit: { message: `feat: ${i}` },
+                            sha: '',
+                        }))
+                        commits.push({
+                            commit: { message: 'feat: not included' },
+                            sha: '123',
+                        })
+                    }
+                    return { data: commits }
+                },
+            },
+        } as any,
+        ...args,
+    })
+    expect(commitMessagesByNoteRule['patch']).toHaveLength(100)
+    expect(commitMessagesByNoteRule['minor']).toHaveLength(100)
 })
