@@ -95,6 +95,31 @@ test('Just bumps correctly', async () => {
   `)
 })
 
+test('No version bump', async () => {
+    expect(
+        await getNextVersionAndReleaseNotes({
+            octokit: getMockedOctokit(
+                [{ name: 'v0.0.9', commit: { sha: '123' } }],
+                [
+                    'fix serious issue\nfeature something new',
+                    {
+                        message: 'feat: should not be here',
+                        sha: '123',
+                    },
+                ],
+            ),
+
+            ...args,
+        }),
+    ).toMatchInlineSnapshot(`
+    Object {
+      "bumpType": "none",
+      "commitsByRule": Object {},
+      "nextVersion": undefined,
+    }
+  `)
+})
+
 test('Just bumps correctly when stable', async () => {
     expect(
         await getNextVersionAndReleaseNotes({
@@ -261,6 +286,7 @@ test('Extracts scopes correctly', async () => {
                 [
                     'fix: fix serious issue\nfeat: add new feature\nBREAKING config was removed',
                     'feat(button): just adding feature\nBREAKING we broke anything',
+                    "fix: some things\nfeat(button): we're insane!\nNote: yes, we are!\n",
                     'fix(library-action): first fixes',
                     {
                         message: 'feat: should not be here',
@@ -332,39 +358,6 @@ test("Extracts sha's correctly", async () => {
         ],
       },
       "nextVersion": "0.1.0",
-    }
-  `)
-})
-
-// TODO move to scopes correctly
-test('Test from GitHub 1', async () => {
-    expect(
-        await getNextVersionAndReleaseNotes({
-            octokit: getMockedOctokit(
-                [{ name: 'v0.0.7', commit: { sha: '123' } }],
-                [
-                    "fix: some things\nfeat(button): we're insane!\nNote: yes, we are!\n",
-                    {
-                        message: 'feat: should not be here',
-                        sha: '123',
-                    },
-                ],
-            ),
-
-            ...args,
-        }),
-    ).toMatchInlineSnapshot(`
-    Object {
-      "bumpType": "patch",
-      "commitsByRule": Object {
-        "minor": Array [
-          "**button**: we're insane!",
-        ],
-        "patch": Array [
-          "some things",
-        ],
-      },
-      "nextVersion": "0.0.8",
     }
   `)
 })

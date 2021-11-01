@@ -17,7 +17,7 @@ In generated changelog (release or markdown file):
 
 - Rename `ifFieldIsMissingForSetter` to `ifPropertyIsMissingForSetter` and `ifFieldIsMissing` to `ifPropertyIsMissing`
 
-> Note: Old properties are preserved and deprecated for compatibility.
+Note: Old properties are preserved and deprecated for compatibility. `[3fa3432](link-to-commit)`
 ```
 
 But you don't really need to write this additional message about deprecation, as absence of `BREAKING` implies it.

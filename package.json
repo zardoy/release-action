@@ -6,7 +6,8 @@
     "author": "Vitaly Turovsky <vital2580@icloud.com>",
     "license": "MIT",
     "scripts": {
-        "prepublishOnly": "tsc"
+        "build": "tsc",
+        "test": "jest"
     },
     "dependencies": {
         "@octokit/rest": "^18.12.0",

@@ -303,7 +303,7 @@ export const getNextVersionAndReleaseNotesFromTag = async ({
         // TODO respect order config with l
         let nextVersion: undefined | string
         let bumpType = getBumpTypeByPriority(resolvedBumpLevel)
-        if (bumpType === undefined || config.bumpingVersionStrategy === 'none') {
+        if (bumpType === 'none' || config.bumpingVersionStrategy === 'none') {
         } else {
             const strategyConfig = versionBumpingStrategies[config.bumpingVersionStrategy]
             if (strategyConfig.isAppliable && !strategyConfig.isAppliable(tagVersion)) {
