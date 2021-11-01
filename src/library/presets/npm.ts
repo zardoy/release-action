@@ -55,9 +55,9 @@ export const main = async ({ repo, octokit }: InputData) => {
     })
 }
 
-const validatePaths = (cwd: string, json) => {
+const validatePaths = (cwd: string, json: PackageJson) => {
     if (json.bin && typeof json.bin === 'string' && !existsSync(join(cwd, json.bin))) throw new Error('no bin!')
 
     // TODO isn't it already checked by npm?
-    for (const path of json.build) if (!existsSync(join(cwd, path))) throw new Error('No build to publish')
+    for (const path of json.files!) if (!existsSync(join(cwd, path))) throw new Error('No build to publish')
 }
