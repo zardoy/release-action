@@ -1,11 +1,11 @@
-import { Octokit } from '@octokit/rest'
 import { promises } from 'fs'
+import { Octokit } from '@octokit/rest'
 import { defaultsDeep } from 'lodash'
 import { modifyPackageJsonFile } from 'modify-json-file'
 import { getNextVersionAndReleaseNotes } from './bumpVersion'
 import { generateChangelog } from './changelogGenerator'
 import { defaultConfig, GlobalPreset } from './config'
-import { OutputData, PresetExports as PresetExports } from './presets/shared'
+import { OutputData, PresetExports } from './presets/shared'
 // TODO use super commander here
 ;(async () => {
     if (!process.env.GITHUB_TOKEN) throw new Error('GITHUB_TOKEN is not defined. Make sure you pass it via env from GitHub action')
@@ -40,18 +40,19 @@ import { OutputData, PresetExports as PresetExports } from './presets/shared'
     if (notPreset.includes(preset)) throw new Error(`${preset} can't be used as preset`)
     let presetToUse: PresetExports
     try {
-        presetToUse = require(`./preset/${preset}`) as PresetExports
-    } catch (err) {
-        throw new Error(`Incorrect preset ${preset}: ${err.message}`)
+        presetToUse = require(`./presets/${preset}`) as PresetExports
+    } catch (error) {
+        throw new Error(`Incorrect preset ${preset}\n${error.message}`)
     }
-    const result = (await presetToUse.main({
+
+    const result = await presetToUse.main({
         octokit,
         repo: {
             octokit: repo,
             url: `https://github.com/${repo.owner}/${repo.repo}`,
         },
         newVersion: nextVersion,
-    })) as OutputData
+    })
 
     const tagVersion = `v${nextVersion}`
     const {
@@ -63,16 +64,14 @@ import { OutputData, PresetExports as PresetExports } from './presets/shared'
         body: changelog,
     })
 
-    if (result && result.assets) {
-        for (const { path, name } of result.assets) {
+    if (result?.assets)
+        for (const { path, name } of result.assets)
             await octokit.repos.uploadReleaseAsset({
                 ...repo,
                 data: (await promises.readFile(path)) as any,
                 name,
                 release_id,
             })
-        }
-    }
 })().catch(error => {
     console.error(error)
     process.exit(1)
