@@ -3,6 +3,7 @@ import { join, posix } from 'path'
 import execa from 'execa'
 import { markdownRemoveHeading } from '../readmeUtils'
 import { InputData, runTestsIfAny, safeExeca } from './shared'
+import { readPackageJsonFile } from 'typed-jsonfile'
 // always pnpm is used in this preset
 
 /** shared main for vscode-extension* presets */
@@ -35,9 +36,11 @@ export const main = async (input: InputData) => {
     const { vsixPath } = await sharedMain(input)
 
     await execa('vsce', ['publich', '--packagePath', vsixPath])
-    const { octokit, packageJson, repo } = input
+    const { octokit, repo } = input
     const homepage = (await octokit.repos.get({ ...repo.octokit })).data.homepage
     if (homepage && !homepage.includes('marketplace.visualstudio')) throw new Error('Homepage must go to extension marketplace')
+
+    const packageJson = await readPackageJsonFile({ dir: '.' })
 
     await octokit.repos.update({
         ...repo.octokit,
