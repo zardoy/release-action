@@ -23,10 +23,11 @@ export type PresetMain = (data: InputData) => Promise<OutputData>
 /** pipes output */
 export const safeExeca = async (command: string, args: string | string[]) => {
     await execa(command, Array.isArray(args) ? args : args.split(' '), {
-        extendEnv: false,
         stdio: 'inherit',
         env: {
-            CI: process.env.CI,
+            NPM_TOKEN: undefined,
+            GITHUB_TOKEN: undefined,
+            PAT: undefined,
         } as any,
     })
 }
