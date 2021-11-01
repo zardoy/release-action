@@ -16,7 +16,7 @@ jobs:
             # TODO caching
         - run: npm i -g pnpm
         - run: pnpm i --frozen-lockfile
-        - run: pnpx -y zardoy-release npm
+        - run: node build/bin.js
           env:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
             NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
