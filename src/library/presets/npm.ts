@@ -41,7 +41,7 @@ export const main = async ({ repo, octokit }: InputData) => {
 
     await execa('npm', ['publish', '--access', 'public'], {
         env: {
-            NODE_AUTH_TOKEN: process.env.NPM_TOKEN,
+            INPUT_TOKEN: process.env.NPM_TOKEN,
         } as any,
     })
 
