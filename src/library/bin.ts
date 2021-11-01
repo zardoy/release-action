@@ -6,6 +6,7 @@ import { getNextVersionAndReleaseNotes } from './bumpVersion'
 import { generateChangelog } from './changelogGenerator'
 import { defaultConfig, GlobalPreset } from './config'
 import { OutputData, PresetExports as PresetExports } from './presets/shared'
+// TODO use super commander here
 ;(async () => {
     if (!process.env.GITHUB_TOKEN) throw new Error('GITHUB_TOKEN is not defined. Make sure you pass it via env from GitHub action')
     const preset = process.argv[2] as GlobalPreset

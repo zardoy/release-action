@@ -16,6 +16,7 @@ jobs:
             # TODO caching
         - run: npm i -g pnpm
         - run: pnpm i --frozen-lockfile
+        - run: pnpm build
         - run: node build/bin.js
           env:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
