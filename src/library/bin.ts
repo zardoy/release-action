@@ -42,7 +42,7 @@ import { OutputData, PresetExports as PresetExports } from './presets/shared'
     try {
         presetToUse = require(`./preset/${preset}`) as PresetExports
     } catch (err) {
-        throw new Error('Incorrect preset')
+        throw new Error(`Incorrect preset ${preset}: ${err.message}`)
     }
     const result = (await presetToUse.main({
         octokit,
