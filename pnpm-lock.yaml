@@ -19,7 +19,6 @@ specifiers:
   execa: ^5.1.1
   github-remote-info: ^1.0.3
   got: ^11.8.2
-  husky: ^7.0.4
   jest: ^27.3.1
   lodash: ^4.17.21
   modify-json-file: ^1.2.1
@@ -58,7 +57,6 @@ devDependencies:
   esbuild-runner: 2.2.1_esbuild@0.13.11
   eslint: 7.32.0
   eslint-plugin-zardoy-config: 0.1.1_eslint@7.32.0+typescript@4.4.4
-  husky: 7.0.4
   jest: 27.3.1_ts-node@10.4.0
   prettier: 2.4.1
   type-fest: 2.5.2
@@ -3556,12 +3554,6 @@ packages:
   /human-signals/2.1.0:
     resolution: {integrity: sha512-B4FFZ6q/T2jhhksgkbEW3HBvWIfDW85snkQgawt07S7J5QXTk6BkNV+0yAeZrM5QpMAdYlocGoljn0sJ/WQkFw==}
     engines: {node: '>=10.17.0'}
-
-  /husky/7.0.4:
-    resolution: {integrity: sha512-vbaCKN2QLtP/vD4yvs6iz6hBEo6wkSzs8HpRah1Z6aGmF2KW5PdYuAd7uX5a+OyBZHBhd+TFLqgjUgytQr4RvQ==}
-    engines: {node: '>=12'}
-    hasBin: true
-    dev: true
 
   /iconv-lite/0.4.24:
     resolution: {integrity: sha512-v3MXnZAcvnywkTUEZomIActle7RXXeedOR31wwl7VlyoXO4Qi9arvSenNQWne1TcRwhCL1HwLI21bEqdpj8/rA==}
