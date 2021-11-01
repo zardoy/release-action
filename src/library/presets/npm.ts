@@ -4,9 +4,8 @@ import execa from 'execa'
 import { defaultsDeep } from 'lodash'
 import { modifyPackageJsonFile } from 'modify-json-file'
 import { PackageJson } from 'type-fest'
-import { readPackageJsonFile } from 'typed-jsonfile'
+import { readPackageJsonFile, readJsonFile } from 'typed-jsonfile'
 import { InputData, runTestsIfAny, safeExeca } from './shared'
-import { readJsonFile } from 'typed-jsonfile'
 
 // going to add more advanced functionality to provide better experience for forks
 
@@ -20,12 +19,11 @@ export const main = async ({ repo, octokit }: InputData) => {
             repository: repo.url,
             // TODO investigate author
         }
-        if (buildDir) {
-            if (existsSync(join(buildDir, 'index.d.ts'))) {
-                defaults.main = join(buildDir, 'index.js')
-                defaults.types = join(buildDir, 'index.d.ts')
-            }
+        if (buildDir && existsSync(join(buildDir, 'index.d.ts'))) {
+            defaults.main = join(buildDir, 'index.js')
+            defaults.types = join(buildDir, 'index.d.ts')
         }
+
         packageJson = defaultsDeep(packageJson, defaults)
 
         return packageJson
@@ -48,7 +46,7 @@ export const main = async ({ repo, octokit }: InputData) => {
     })
 
     // refactor to: detect and update
-    const homepage = (await octokit.repos.get({ ...repo.octokit })).data.homepage
+    const { homepage } = (await octokit.repos.get({ ...repo.octokit })).data
     if (homepage && !homepage.includes('npm')) throw new Error('Homepage must go to package on NPM')
 
     await octokit.repos.update({

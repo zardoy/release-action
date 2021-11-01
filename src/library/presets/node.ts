@@ -6,6 +6,6 @@ export const main = async () => {
 
     if (!packageJson.scripts?.build) throw new Error('Not NPM modules must have build script')
     if (packageJson.scripts.prepublishOnly) throw new Error("Not NPM can't have prepublishOnly script")
-    safeExeca('pnpm', 'run build')
+    await safeExeca('pnpm', 'run build')
     // it's supposed that workflow handle the rest
 }
