@@ -81,10 +81,10 @@ export const defaultConfig: Config = {
     linksToSameCommit: true,
 }
 
-export type GlobalPreset = 'npm' | 'vscode-extension'
+export type GlobalPreset = 'node' | 'npm' | 'vscode-extension' | 'vscode-extension-vsix'
 
 /** this is just config overrides, however the process or publishing is heavily customized in its own files */
-export const presetConfigOverrides: Record<GlobalPreset, Partial<Config>> = {
-    npm: {},
-    'vscode-extension': {},
-}
+// export const presetConfigOverrides: Record<GlobalPreset, Partial<Config>> = {
+//     npm: {},
+//     'vscode-extension': {},
+// }

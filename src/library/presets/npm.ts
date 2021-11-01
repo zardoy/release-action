@@ -5,20 +5,26 @@ import { defaultsDeep } from 'lodash'
 import { modifyPackageJsonFile } from 'modify-json-file'
 import { PackageJson } from 'type-fest'
 import { readPackageJsonFile } from 'typed-jsonfile'
-import { runTests, safeExeca } from './shared'
+import { InputData, runTestsIfAny, safeExeca } from './shared'
+import { readJsonFile } from 'typed-jsonfile'
 
-export const main = async ({ repoUrl }: { repoUrl: string }) => {
-    const cwd = process.cwd()
+// going to add more advanced functionality to provide better experience for forks
+
+export const main = async ({ repo, octokit }: InputData) => {
     // PREPARE package.json
-    // const info = await getGithubRemoteInfo(cwd)
-    // if (!info) throw new Error('Init repository first!')
-    await modifyPackageJsonFile({ dir: cwd }, packageJson => {
+    const buildDir = (await readJsonFile<any>('tsconfig.json')).compilerOptions.outDir
+    if (!buildDir) throw new Error('No build dir is specified in tsconfig.json')
+    await modifyPackageJsonFile({ dir: '.' }, packageJson => {
         const defaults: PackageJson = {
-            types: 'build/index.d.ts',
-            main: 'build/index.js',
             files: ['build'],
-            repository: repoUrl,
+            repository: repo.url,
             // TODO investigate author
+        }
+        if (buildDir) {
+            if (existsSync(join(buildDir, 'index.d.ts'))) {
+                defaults.main = join(buildDir, 'index.js')
+                defaults.types = join(buildDir, 'index.d.ts')
+            }
         }
         packageJson = defaultsDeep(packageJson, defaults)
 
@@ -26,12 +32,12 @@ export const main = async ({ repoUrl }: { repoUrl: string }) => {
     })
 
     const packageJson = await readPackageJsonFile({ dir: '.' })
-    if (packageJson.private) throw new Error("Packages that are going to publish can't be private")
+    if (packageJson.private) throw new Error("Packages that are going to publish to NPM can't be private")
     if (packageJson.scripts?.build) await safeExeca('pnpm', 'run build')
     else if (!packageJson.scripts?.prepublishOnly) throw new Error('Nothing to build, specify script first (prepublishOnly or build)')
 
     // not really great as it runs before prepublishOnly
-    await runTests()
+    await runTestsIfAny()
 
     validatePaths(process.cwd(), await readPackageJsonFile({ dir: process.cwd() }))
 
@@ -39,6 +45,15 @@ export const main = async ({ repoUrl }: { repoUrl: string }) => {
         env: {
             NODE_AUTH_TOKEN: process.env.NPM_TOKEN,
         } as any,
+    })
+
+    // refactor to: detect and update
+    const homepage = (await octokit.repos.get({ ...repo.octokit })).data.homepage
+    if (homepage && !homepage.includes('npm')) throw new Error('Homepage must go to package on NPM')
+
+    await octokit.repos.update({
+        ...repo.octokit,
+        homepage: `https://npmjs.com/${packageJson.name!}`,
     })
 }
 

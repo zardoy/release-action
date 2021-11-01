@@ -1,18 +1,18 @@
 import { Octokit } from '@octokit/rest'
+import { promises } from 'fs'
 import { defaultsDeep } from 'lodash'
 import { modifyPackageJsonFile } from 'modify-json-file'
 import { getNextVersionAndReleaseNotes } from './bumpVersion'
 import { generateChangelog } from './changelogGenerator'
-import { defaultConfig, GlobalPreset, presetConfigOverrides } from './config'
-import * as npmPreset from './presets/npm'
-import * as vscodePreset from './presets/vscode-extension'
-import * as testingPreset from './testingPreset'
+import { defaultConfig, GlobalPreset } from './config'
+import { OutputData, PresetExports as PresetExports } from './presets/shared'
 ;(async () => {
     if (!process.env.GITHUB_TOKEN) throw new Error('GITHUB_TOKEN is not defined. Make sure you pass it via env from GitHub action')
     const preset = process.argv[2] as GlobalPreset
     if (!preset) throw new Error('Preset must be defined!')
+    if (!process.env.CI) throw new Error('The tools is intended to be run in GitHub action workflow')
     // TODO cosmiconffig
-    const config = defaultsDeep(presetConfigOverrides[preset], defaultConfig)
+    const config = defaultsDeep({}, defaultConfig)
     const [owner, repoName] = process.env.GITHUB_REPOSITORY!.split('/')
     const repo = {
         owner: owner!,
@@ -34,38 +34,44 @@ import * as testingPreset from './testingPreset'
             version: nextVersion,
         },
     )
-    const presetToUse = (() => {
-        switch (preset) {
-            case 'npm':
-                return npmPreset
 
-            case 'vscode-extension':
-                return vscodePreset
+    const notPreset = ['shared']
+    if (notPreset.includes(preset)) throw new Error(`${preset} can't be used as preset`)
+    let presetToUse: PresetExports
+    try {
+        presetToUse = require(`./preset/${preset}`) as PresetExports
+    } catch (err) {
+        throw new Error('Incorrect preset')
+    }
+    const result = (await presetToUse.main({
+        octokit,
+        repo: {
+            octokit: repo,
+            url: `https://github.com/${repo.owner}/${repo.repo}`,
+        },
+        newVersion: nextVersion,
+    })) as OutputData
 
-            // @ts-expect-error hidden presset
-            case 'testing':
-                return testingPreset
-
-            default: {
-                throw new Error('Incorrect preset')
-            }
-        }
-    })()
-    await presetToUse.main({ repoUrl: `https://github.com/${repo.owner}/${repo.repo}` })
     const tagVersion = `v${nextVersion}`
-    await octokit.repos.createRelease({
+    const {
+        data: { id: release_id },
+    } = await octokit.repos.createRelease({
         ...repo,
         tag_name: tagVersion,
         name: tagVersion,
         body: changelog,
     })
 
-    // will setup assets publishing later, when I need ti
-    // if (result && result.assets) {
-    //     result.assets
-    // }
-
-    // const nextVersion = getNextVersion(octokit, repo)
+    if (result && result.assets) {
+        for (const { path, name } of result.assets) {
+            await octokit.repos.uploadReleaseAsset({
+                ...repo,
+                data: (await promises.readFile(path)) as any,
+                name,
+                release_id,
+            })
+        }
+    }
 })().catch(error => {
     console.error(error)
     process.exit(1)
