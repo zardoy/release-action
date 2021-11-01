@@ -1,13 +1,10 @@
 {
     "name": "zardoy-release",
-    "version": "0.0.6",
+    "version": "0.1.0",
     "bin": "build/bin.js",
     "repository": "https://github.com/zardoy/publish-action.git",
     "author": "Vitaly Turovsky <vital2580@icloud.com>",
     "license": "MIT",
-    "files": [
-        "build"
-    ],
     "scripts": {
         "prepublishOnly": "tsc"
     },
