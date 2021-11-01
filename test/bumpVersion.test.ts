@@ -307,8 +307,12 @@ test('Extracts scopes correctly', async () => {
           "**button**: just adding feature
     we broke anything",
         ],
+        "minor": Array [
+          "**button**: we're insane!",
+        ],
         "patch": Array [
           "fix serious issue",
+          "some things",
           "**library-action**: first fixes",
         ],
       },
