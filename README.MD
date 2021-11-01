@@ -7,7 +7,7 @@ This action:
 - ignores branch check, you can specify it in your workflow
 - uses GitHub API to fetch latest tag, instead of pulling full git history
 
-Warning! I didn't make it available to public usage, because it's highly opinionated.
+Warning! Highly opinionated. `bin` entrypoint is intended to be run in GitHub action environment.
 
 - Works only with GitHub
 - Works best with tsc
