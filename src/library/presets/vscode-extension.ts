@@ -1,16 +1,21 @@
 import fs from 'fs'
 import { join, posix } from 'path'
 import execa from 'execa'
+import { readPackageJsonFile } from 'typed-jsonfile'
 import { markdownRemoveHeading } from '../readmeUtils'
 import { InputData, runTestsIfAny, safeExeca } from './shared'
-import { readPackageJsonFile } from 'typed-jsonfile'
 // always pnpm is used in this preset
 
 /** shared main for vscode-extension* presets */
 export const sharedMain = async ({ repo }: InputData) => {
-    await safeExeca('pnpm', 'vscode-framework build')
-    await runTestsIfAny()
-    const copyFiles = ['LICENSE']
+    if (fs.existsSync('src/extension.ts')) {
+        await safeExeca('pnpm', 'vscode-framework build')
+        await runTestsIfAny()
+    }
+
+    // try to save extra size
+    // const copyFiles = ['LICENSE']
+    const copyFiles = []
 
     const CHANGELOG_CONTENT = `# Changelog\nChangelog will go here in future releases. For now you can view [changelog at GitHub](${posix.join(
         repo.url,
@@ -37,7 +42,7 @@ export const main = async (input: InputData) => {
 
     await execa('vsce', ['publish', '--packagePath', vsixPath], { stdio: 'inherit' })
     const { octokit, repo } = input
-    const homepage = (await octokit.repos.get({ ...repo.octokit })).data.homepage
+    const { homepage } = (await octokit.repos.get({ ...repo.octokit })).data
     if (homepage && !homepage.includes('marketplace.visualstudio')) throw new Error('Homepage must go to extension marketplace')
 
     const packageJson = await readPackageJsonFile({ dir: '.' })

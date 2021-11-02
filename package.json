@@ -11,6 +11,7 @@
     },
     "dependencies": {
         "@octokit/rest": "^18.12.0",
+        "commander": "^8.3.0",
         "execa": "^5.1.1",
         "github-remote-info": "^1.0.3",
         "got": "^11.8.2",
@@ -18,7 +19,6 @@
         "modify-json-file": "^1.2.1",
         "remark": "13",
         "semver": "^7.3.5",
-        "ts-node": "^10.4.0",
         "typed-jsonfile": "^0.1.1"
     },
     "devDependencies": {
