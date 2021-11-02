@@ -37,7 +37,7 @@ export const sharedMain = async ({ repo }: InputData) => {
     await execa('pnpm', 'i -g vsce'.split(' '), { stdio: 'inherit' })
     endGroup()
     const vsixPath = join(process.cwd(), 'output.vsix')
-    await safeExeca('vsce', ['package', '--out', vsixPath], {
+    await safeExeca('pnpm', ['vsce', 'package', '--out', vsixPath], {
         cwd: join(process.cwd(), 'out'),
     })
     const SIZE_LIMIT = 3 * 1024 * 1024 // 3 MG
@@ -49,8 +49,8 @@ export const main = async (input: InputData) => {
     const { vsixPath } = await sharedMain(input)
 
     startGroup('publish')
-    await execa('vsce', ['publish', '--packagePath', vsixPath], { stdio: 'inherit' })
-    await execa('npx -y ovsx', ['publish', '--packagePath', vsixPath], { stdio: 'inherit' })
+    await execa('pnpm', ['vsce', 'publish', '--packagePath', vsixPath], { stdio: 'inherit' })
+    await execa('pnpx -y ovsx', ['publish', '--packagePath', vsixPath], { stdio: 'inherit' })
     endGroup()
     const { octokit, repo } = input
     const { homepage } = (await octokit.repos.get({ ...repo.octokit })).data
