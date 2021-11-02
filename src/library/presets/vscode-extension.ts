@@ -24,7 +24,7 @@ export const sharedMain = async ({ repo }: InputData) => {
     const newReadme = await markdownRemoveHeading(readme, 'Extension Development Notes')
     await fs.promises.writeFile('./out/README.MD', newReadme)
     // even if not on CI, updates to latest version
-    await execa('pnpm', 'i -g vsce'.split(' '))
+    await execa('pnpm', 'i -g vsce'.split(' '), { stdio: 'inherit' })
     const vsixPath = 'output.vsix'
     await safeExeca('vsce', ['package', '--out', vsixPath])
     const SIZE_LIMIT = 3 * 1024 * 1024 // 3 MG
@@ -35,7 +35,7 @@ export const sharedMain = async ({ repo }: InputData) => {
 export const main = async (input: InputData) => {
     const { vsixPath } = await sharedMain(input)
 
-    await execa('vsce', ['publich', '--packagePath', vsixPath])
+    await execa('vsce', ['publish', '--packagePath', vsixPath], { stdio: 'inherit' })
     const { octokit, repo } = input
     const homepage = (await octokit.repos.get({ ...repo.octokit })).data.homepage
     if (homepage && !homepage.includes('marketplace.visualstudio')) throw new Error('Homepage must go to extension marketplace')

@@ -1,4 +1,4 @@
-name: Release
+name: NPM Release
 on:
   push:
     branches: [ main ]
@@ -28,5 +28,5 @@ jobs:
         - run: pnpm build
         - run: node build/bin.js npm
           env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
             NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
