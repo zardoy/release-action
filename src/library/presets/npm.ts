@@ -5,6 +5,7 @@ import { defaultsDeep } from 'lodash'
 import { modifyPackageJsonFile } from 'modify-json-file'
 import { PackageJson } from 'type-fest'
 import { readPackageJsonFile, readJsonFile } from 'typed-jsonfile'
+import { startGroup, endGroup } from '@actions/core'
 import { InputData, runTestsIfAny, safeExeca } from './shared'
 
 // going to add more advanced functionality to provide better experience for forks
@@ -31,15 +32,22 @@ export const main = async ({ repo, octokit }: InputData) => {
 
     const packageJson = await readPackageJsonFile({ dir: '.' })
     if (packageJson.private) throw new Error("Packages that are going to publish to NPM can't be private")
-    if (packageJson.scripts?.build) await safeExeca('pnpm', 'run build')
-    else if (!packageJson.scripts?.prepublishOnly) throw new Error('Nothing to build, specify script first (prepublishOnly or build)')
+    if (packageJson.scripts?.build) {
+        startGroup('pnpm run build')
+        await safeExeca('pnpm', 'run build')
+        endGroup()
+    } else if (!packageJson.scripts?.prepublishOnly) {
+        throw new Error('Nothing to build, specify script first (prepublishOnly or build)')
+    }
 
     // not really great as it runs before prepublishOnly
     await runTestsIfAny()
 
     validatePaths(process.cwd(), await readPackageJsonFile({ dir: process.cwd() }))
 
+    startGroup('publish')
     await execa('pnpm', ['publish', '--access', 'public', '--no-git-checks'], { stdio: 'inherit' })
+    endGroup()
 
     // refactor to: detect and update
     const { homepage } = (await octokit.repos.get({ ...repo.octokit })).data
