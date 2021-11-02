@@ -2,6 +2,7 @@ import fs from 'fs'
 import { join, posix } from 'path'
 import execa from 'execa'
 import { readPackageJsonFile } from 'typed-jsonfile'
+import { startGroup, endGroup } from '@actions/core'
 import { markdownRemoveHeading } from '../readmeUtils'
 import { InputData, runTestsIfAny, safeExeca } from './shared'
 // always pnpm is used in this preset
@@ -9,7 +10,9 @@ import { InputData, runTestsIfAny, safeExeca } from './shared'
 /** shared main for vscode-extension* presets */
 export const sharedMain = async ({ repo }: InputData) => {
     if (fs.existsSync('src/extension.ts')) {
+        startGroup('vscode-framework build')
         await safeExeca('pnpm', 'vscode-framework build')
+        endGroup()
         await runTestsIfAny()
     }
 
@@ -29,7 +32,9 @@ export const sharedMain = async ({ repo }: InputData) => {
     const newReadme = await markdownRemoveHeading(readme, 'Extension Development Notes')
     await fs.promises.writeFile('./out/README.MD', newReadme)
     // even if not on CI, updates to latest version
+    startGroup('pnpm i -g vsce')
     await execa('pnpm', 'i -g vsce'.split(' '), { stdio: 'inherit' })
+    endGroup()
     const vsixPath = 'output.vsix'
     await safeExeca('vsce', ['package', '--out', vsixPath])
     const SIZE_LIMIT = 3 * 1024 * 1024 // 3 MG
@@ -40,8 +45,10 @@ export const sharedMain = async ({ repo }: InputData) => {
 export const main = async (input: InputData) => {
     const { vsixPath } = await sharedMain(input)
 
+    startGroup('publish')
     await execa('vsce', ['publish', '--packagePath', vsixPath], { stdio: 'inherit' })
     await execa('npx -y ovsx', ['publish', '--packagePath', vsixPath], { stdio: 'inherit' })
+    endGroup()
     const { octokit, repo } = input
     const { homepage } = (await octokit.repos.get({ ...repo.octokit })).data
     if (homepage && !homepage.includes('marketplace.visualstudio')) throw new Error('Homepage must go to extension marketplace')

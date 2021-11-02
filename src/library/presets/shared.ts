@@ -1,6 +1,7 @@
 import { Octokit } from '@octokit/rest'
 import execa from 'execa'
 import { readPackageJsonFile } from 'typed-jsonfile'
+import { startGroup, endGroup } from '@actions/core'
 
 export type InputData = {
     repo: {
@@ -32,7 +33,17 @@ export const safeExeca = async (command: string, args: string | string[]) => {
     })
 }
 
+export const runBuild = async () => {
+    startGroup('pnpm run build')
+    await safeExeca('pnpm', 'run build')
+    endGroup()
+}
+
 export const runTestsIfAny = async () => {
-    if ((await readPackageJsonFile({ dir: '.' })).scripts?.test) await safeExeca('pnpm', 'test')
+    if ((await readPackageJsonFile({ dir: '.' })).scripts?.test) {
+        startGroup('pnpm test')
+        await safeExeca('pnpm', 'test')
+        endGroup()
+    }
     // TODO run eslint with no-op
 }
