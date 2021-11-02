@@ -41,6 +41,7 @@ export const main = async (input: InputData) => {
     const { vsixPath } = await sharedMain(input)
 
     await execa('vsce', ['publish', '--packagePath', vsixPath], { stdio: 'inherit' })
+    await execa('npx -y ovsx', ['publish', '--packagePath', vsixPath], { stdio: 'inherit' })
     const { octokit, repo } = input
     const { homepage } = (await octokit.repos.get({ ...repo.octokit })).data
     if (homepage && !homepage.includes('marketplace.visualstudio')) throw new Error('Homepage must go to extension marketplace')
