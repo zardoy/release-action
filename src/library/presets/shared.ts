@@ -22,9 +22,10 @@ export type PresetMain = (data: InputData) => Promise<OutputData>
 
 // I don't think it's safe
 /** pipes output */
-export const safeExeca = async (command: string, args: string | string[]) => {
+export const safeExeca = async (command: string, args: string | string[], options: execa.Options<string> = {}) => {
     await execa(command, Array.isArray(args) ? args : args.split(' '), {
         stdio: 'inherit',
+        ...options,
         env: {
             NPM_TOKEN: undefined,
             GITHUB_TOKEN: undefined,
