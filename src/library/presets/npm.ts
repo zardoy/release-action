@@ -39,11 +39,7 @@ export const main = async ({ repo, octokit }: InputData) => {
 
     validatePaths(process.cwd(), await readPackageJsonFile({ dir: process.cwd() }))
 
-    await execa('npm', ['publish', '--access', 'public'], {
-        env: {
-            INPUT_TOKEN: process.env.NPM_TOKEN,
-        } as any,
-    })
+    await execa('pnpm', ['publish', '--access', 'public'])
 
     // refactor to: detect and update
     const { homepage } = (await octokit.repos.get({ ...repo.octokit })).data
