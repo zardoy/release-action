@@ -1,53 +1,102 @@
 import { sortBy } from 'lodash'
-import { NextVersionReturn, NotesRule } from './bumpVersion'
+import { BasicReleaseType, NextVersionReturn } from './bumpVersion'
 import { Config } from './config'
 
-// TODO make and refs below
-// TODO RENAME
+// in future it will changed to string
+export type NoteGeneratorName = BasicReleaseType
+
+interface NoteGeneratorDefinition {
+    heading: string
+    /** @default 0 */
+    order?: number
+}
+
+const makeNoteGenerators = <T extends string>(t: Record<T, Record<NoteGeneratorName, NoteGeneratorDefinition>>) => t
 // style - rules
-export const notesRules: Record<string, Record<string, NotesRule>> = {
+export const notesGenerators = makeNoteGenerators({
+    /** almost the same as plain but will also receive several updates in future */
     default: {
         patch: {
-            groupTitle: '### Bug Fixes',
+            heading: '### Bug Fixes',
         },
         minor: {
-            groupTitle: '### New Features',
+            heading: '### New Features',
             order: -1,
         },
         major: {
-            groupTitle: '## BREAKING CHANGES',
+            heading: '## 💥 BREAKING CHANGES',
             order: -2,
         },
     },
-    semverStyle: {
+    plain: {
         patch: {
-            groupTitle: '### Patch Changes',
+            heading: '### Bug Fixes',
         },
         minor: {
-            groupTitle: '### Minor Changes',
+            heading: '### New Features',
             order: -1,
         },
         major: {
-            groupTitle: '## Major Changes',
+            heading: '## BREAKING CHANGES',
             order: -2,
         },
     },
-}
+    semver: {
+        patch: {
+            heading: '### Patch Changes',
+        },
+        minor: {
+            heading: '### Minor Changes',
+            order: -1,
+        },
+        major: {
+            heading: '## Major Changes',
+            order: -2,
+        },
+    },
+    prisma: {
+        patch: {
+            heading: '### Patch Changes',
+        },
+        minor: {
+            heading: '### Major improvements & new features',
+            order: -1,
+        },
+        major: {
+            heading: '# Breaking Changes',
+            order: -2,
+        },
+    },
+    /** obviously its a restricted version */
+    gitmoji: {
+        patch: {
+            heading: '### 🐛 Bug Fixes',
+        },
+        minor: {
+            heading: '## ✨ New Features',
+            order: -1,
+        },
+        major: {
+            heading: '# 💥 Breaking Changes',
+            order: -2,
+        },
+    },
+})
 
 export const generateChangelog = (
     messagesByRule: NextVersionReturn['commitsByRule'],
-    style: Config['changelog']['style'],
-    metadata: { bumpType: string },
+    metadata: { bumpType: string; npmPackage?: string },
+    config: Config,
 ): string => {
-    if (messagesByRule.rawOverride) return messagesByRule.rawOverride as string
-    const rules = notesRules[style]!
-    // unsafe
+    if ('rawOverride' in messagesByRule) return messagesByRule.rawOverride as string
+    const rulesStyle = config.changelog.style
+    /** No escaping */
     const headings = [] as Array<{ order: number; markdown: string }>
     for (const [noteRule, messages] of Object.entries(messagesByRule)) {
         let markdown = ''
-        const rule = rules[noteRule]!
+        const rule = notesGenerators[rulesStyle][noteRule]
         markdown += `${rule.groupTitle}\n\n`
-        markdown += (messages as string[]).map(msg => `- ${msg}`).join('\n')
+        markdown += messages.map(msg => `- ${msg}`).join('\n')
         headings.push({
             markdown,
             order: rule.order ?? 0,
@@ -57,8 +106,9 @@ export const generateChangelog = (
     let markdown = sortBy(headings, ({ order }) => order)
         .map(({ markdown }) => markdown)
         .join('\n')
-    // TODO! include more metadata
     // TODO describe metadata in Readme. this will allow github-extra to filter out releases by type (e.g. whether they have new features or not)
-    markdown = `<!-- bump-type:${metadata.bumpType} -->\n${markdown}`
+    let metadataString = `bump-type:${metadata.bumpType}`
+    if (metadata.npmPackage) metadataString += ` npm:${metadata.npmPackage}`
+    markdown = `<!-- ${metadataString} -->\n${markdown}`
     return markdown
 }

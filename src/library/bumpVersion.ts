@@ -7,17 +7,7 @@ import { OctokitRepo } from './types'
 
 export type SemverVersionString = `${number}.${number}.${number}` | `${number}.${number}.${number}-${string}`
 
-type BasicReleaseType = 'patch' | 'minor' | 'major'
-
-export interface NotesRule {
-    groupTitle: string
-    /** @default 0 */
-    order?: number
-    // TODO uncomment in future
-    // stripScope?: boolean
-    /** PR, otherwise commit linked issue, otherwise commit if commit is empty - nothing */
-    // noteLink?: boolean
-}
+export type BasicReleaseType = 'patch' | 'minor' | 'major'
 
 type OptionalPropertyOf<T extends Record<string, unknown>> = Exclude<
     {
@@ -37,7 +27,7 @@ interface VersionRule {
     bump: false | ReleaseType
     stripByRegex?: boolean
     /** otherwise `bump` is used by default */
-    notesRule?: string
+    notesSection?: string
 }
 
 const versionRules: VersionRule[] = [
@@ -68,12 +58,12 @@ const versionPriority: Record<BasicReleaseType | 'none', number> = {
 const getBumpTypeByPriority = (priority: number) => Object.entries(versionPriority).find(([, p]) => p === priority)![0]
 
 type VersionMap = Record<BasicReleaseType, BasicReleaseType> & {
-    /** @default Always appliable */
-    isAppliable?: (version: string) => boolean
+    /** @default Always applicable */
+    isApplicable?: (version: string) => boolean
 }
 export const makeVersionMaps = <T extends string>(versionsMaps: Record<T, VersionMap>) => versionsMaps
 
-/** Opiniated too */
+/** Opinionated too */
 export const versionBumpingStrategies = makeVersionMaps({
     /**
      * 0.0.1 -> BREAKING -> 0.1.0 (not semver!)
@@ -81,13 +71,13 @@ export const versionBumpingStrategies = makeVersionMaps({
      * Used only when major version is 0
      */
     semverUnstable: {
-        isAppliable: version => major(version) === 0,
+        isApplicable: version => major(version) === 0,
         major: 'minor',
         minor: 'patch',
         patch: 'patch',
     },
     /**
-     * Old prisma versioining (always max is minor)
+     * Old prisma versioning (always max is minor)
      * 0.1.0 -> BREAKING -> 0.2.0
      * 2.0.1 -> BREAKING -> 2.1.0
      */
@@ -250,7 +240,7 @@ export const getNextVersionAndReleaseNotesFromTag = async ({
 
                 // TODO cancel bumping of commitMessageLine, not whole commit
                 if (versionRule.bump === false) continue commit
-                const notesRule = versionRule.notesRule ?? versionRule.bump
+                const notesRule = versionRule.notesSection ?? versionRule.bump
                 const currentPriority = versionPriority[versionRule.bump]
                 if (currentPriority < currentBump.bumpLevel) continue
                 currentBump = {
@@ -313,7 +303,7 @@ export const getNextVersionAndReleaseNotesFromTag = async ({
     if (bumpType === 'none' || config.bumpingVersionStrategy === 'none') {
     } else {
         const strategyConfig = versionBumpingStrategies[config.bumpingVersionStrategy]
-        if (strategyConfig.isAppliable && !strategyConfig.isAppliable(tagVersion)) {
+        if (strategyConfig.isApplicable && !strategyConfig.isApplicable(tagVersion)) {
         } else {
             bumpType = strategyConfig[bumpType]
         }

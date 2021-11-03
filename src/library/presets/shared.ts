@@ -3,23 +3,25 @@ import { Octokit } from '@octokit/rest'
 import execa from 'execa'
 import { readPackageJsonFile } from 'typed-jsonfile'
 import { startGroup, endGroup } from '@actions/core'
+import { GlobalPreset, PresetSpecificConfigs } from '../config'
 
-export type InputData = {
+export type InputData<T extends GlobalPreset> = {
     repo: {
         url: string
         octokit: Record<'repo' | 'owner', string>
     }
     octokit: Octokit
     newVersion: string
+    presetConfig: PresetSpecificConfigs[T]
 }
 
 export type OutputData = void | {
     assets: Array<{ name: string; path: string }>
 }
 
-export type PresetExports = { main: PresetMain }
+export type PresetExports = { main: PresetMain<any> }
 
-export type PresetMain = (data: InputData) => Promise<OutputData>
+export type PresetMain<T extends GlobalPreset> = (data: InputData<T>) => Promise<OutputData>
 
 // I don't think it's safe
 /** pipes output */

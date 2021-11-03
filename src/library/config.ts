@@ -1,5 +1,7 @@
 import { SemverVersionString, versionBumpingStrategies } from './bumpVersion'
+import { notesGenerators } from './changelogGenerator'
 
+// eslint-disable-next-line zardoy-config/@typescript-eslint/no-namespace
 namespace Plugin {
     /** What specific plugin hook can override */
     export type Override = {
@@ -45,8 +47,7 @@ export type GlobalPreset = 'node' | 'npm' | 'vscode-extension' | 'vscode-extensi
 
 const makePresetConfigs = <T extends Record<GlobalPreset, Record<string, any>>>(t: T) => t
 
-/** config that exclusive to some preset */
-export const presetsConfigDefaults = makePresetConfigs({
+export const presetSpecificConfigDefaults = makePresetConfigs({
     'vscode-extension': {
         publishOvsx: true,
         publishMarketplace: true,
@@ -56,6 +57,8 @@ export const presetsConfigDefaults = makePresetConfigs({
     node: {},
     npm: {},
 })
+
+export type PresetSpecificConfigs = typeof presetSpecificConfigDefaults
 
 export interface Config {
     initialVersion: {
@@ -76,9 +79,9 @@ export interface Config {
     /** Changelog generator config */
     changelog: {
         /** now affects only headings style */
-        style: 'default' /*  | 'emoji' */
+        style: keyof typeof notesGenerators
     }
-    // preset: typeof presetsConfigDefaults
+    preset: Partial<PresetSpecificConfigs[keyof PresetSpecificConfigs]>
     /** how to order notes by date of the commit. just reverses in case of `desc` */
     // notesOrder: 'asc-by-date' | 'desc-by-date'
 }
@@ -97,5 +100,5 @@ export const defaultConfig: Config = {
     // requirePublishKeyword: false,
     // notesOrder: 'asc-by-date',
     linksToSameCommit: true,
-    // preset: {},
+    preset: {},
 }

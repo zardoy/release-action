@@ -3,6 +3,6 @@
 import { readPackageJsonFile } from 'typed-jsonfile'
 import { InputData } from './shared'
 
-export const main = async ({ repo }: InputData) => {
+export const main = async ({ repo }: InputData<any>) => {
     console.log('Publishing version', (await readPackageJsonFile({ dir: '.' })).version, repo.url)
 }

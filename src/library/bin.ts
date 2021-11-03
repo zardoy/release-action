@@ -5,17 +5,17 @@ import { modifyPackageJsonFile } from 'modify-json-file'
 import { cosmiconfig } from 'cosmiconfig'
 import { getNextVersionAndReleaseNotes } from './bumpVersion'
 import { generateChangelog } from './changelogGenerator'
-import { defaultConfig, GlobalPreset } from './config'
-import { OutputData, PresetExports } from './presets/shared'
-// TODO use super commander here
+import { Config, defaultConfig, GlobalPreset, presetSpecificConfigDefaults } from './config'
+import { PresetExports } from './presets/shared'
+import { readPackageJsonFile } from 'typed-jsonfile'
 ;(async () => {
     if (!process.env.GITHUB_TOKEN) throw new Error('GITHUB_TOKEN is not defined. Make sure you pass it via env from GitHub action')
     const preset = process.argv[2] as GlobalPreset
     if (!preset) throw new Error('Preset must be defined!')
     if (!process.env.CI) throw new Error('The tools is intended to be run in GitHub action workflow')
-    const explorer = cosmiconfig('release')
-    const userConfig = await explorer.search()
-    const config = defaultsDeep(userConfig?.config || {}, defaultConfig)
+    const userConfig = await cosmiconfig('release').search()
+    const config = defaultsDeep(userConfig?.config || {}, defaultConfig) as Config
+    config.preset = defaultsDeep(config.preset, presetSpecificConfigDefaults[preset])
     const [owner, repoName] = process.env.GITHUB_REPOSITORY!.split('/')
     const repo = {
         owner: owner!,
@@ -24,13 +24,18 @@ import { OutputData, PresetExports } from './presets/shared'
     const octokit = new Octokit({
         auth: process.env.GITHUB_TOKEN,
     })
+
     const { commitsByRule, nextVersion, bumpType } = await getNextVersionAndReleaseNotes({
         octokit,
         config: defaultConfig,
         repo,
     })
     if (!nextVersion) return
-    const changelog = generateChangelog(commitsByRule, 'default', { bumpType })
+    const changelog = generateChangelog(
+        commitsByRule,
+        { bumpType, npmPackage: preset === 'npm' ? (await readPackageJsonFile({ dir: '.' })).name : undefined },
+        config,
+    )
     await modifyPackageJsonFile(
         { dir: '.' },
         {
@@ -42,6 +47,7 @@ import { OutputData, PresetExports } from './presets/shared'
     if (notPreset.includes(preset)) throw new Error(`${preset} can't be used as preset`)
     let presetToUse: PresetExports
     try {
+        // eslint-disable-next-line zardoy-config/@typescript-eslint/no-require-imports
         presetToUse = require(`./presets/${preset}`) as PresetExports
     } catch (error) {
         throw new Error(`Incorrect preset ${preset}\n${error.message}`)
@@ -54,6 +60,7 @@ import { OutputData, PresetExports } from './presets/shared'
             url: `https://github.com/${repo.owner}/${repo.repo}`,
         },
         newVersion: nextVersion,
+        presetConfig: config.preset,
     })
 
     const tagVersion = `v${nextVersion}`

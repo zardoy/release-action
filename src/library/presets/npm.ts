@@ -10,7 +10,7 @@ import { InputData, runBuild, runTestsIfAny, safeExeca } from './shared'
 
 // going to add more advanced functionality to provide better experience for forks
 
-export const main = async ({ repo, octokit }: InputData) => {
+export const main = async ({ repo, octokit }: InputData<'npm'>) => {
     // PREPARE package.json
     const buildDir = (await readJsonFile<any>('tsconfig.json')).compilerOptions.outDir
     if (!buildDir) throw new Error('No build dir is specified in tsconfig.json')
