@@ -165,6 +165,7 @@ export const getNextVersionAndReleaseNotes = async ({ octokit, repo, config }: B
 }
 
 /** use with fetched tag */
+// eslint-disable-next-line complexity
 export const getNextVersionAndReleaseNotesFromTag = async ({
     tag: { commitSha: tagCommitSha, version: tagVersion },
     octokit,
@@ -173,7 +174,10 @@ export const getNextVersionAndReleaseNotesFromTag = async ({
 }: // addCommitLink = true,
 { tag: Record<'version' | 'commitSha', string> /* addCommitLink?: boolean */ } & BumpVersionParams): Promise<NextVersionReturn> => {
     let commits: Array<{ sha?: string; commit: { message: string } }> = []
+    // #region Fetch commits before tag (exlusive)
+    let commitsBeforeTag: Array<{ message: string; sha?: string }>
     for (let i = 1; true; i++) {
+        // eslint-disable-next-line no-await-in-loop
         const { data: justFetchedCommits } = await octokit.repos.listCommits({
             ...repo,
             // i don't think it matters: 30 or 100
@@ -183,143 +187,147 @@ export const getNextVersionAndReleaseNotesFromTag = async ({
         commits = [...commits, ...justFetchedCommits]
         const tagCommitIndex = justFetchedCommits.findIndex(c => c.sha === tagCommitSha)
         if (tagCommitIndex === -1) continue
-        const commitsBeforeTag = commits.slice(0, commits.length - justFetchedCommits.length + tagCommitIndex)
-        const commitMessagesBeforeTag = commitsBeforeTag.map(c => ({ message: c.commit.message, sha: c.sha }))
-        /** But before strategy resolve */
-        let resolvedBumpLevel = 0
-        const releaseNotes: NextVersionReturn['commitsByRule'] = {}
-        const processCommitMessage = (message: string, sha?: string) => {
-            let prNumber: string | undefined
-            const closesIssues = [] as number[]
-            message = message
-                // too weak detection
-                .replace(/\(#(\d+)\)$/, (_, num) => {
-                    prNumber = num
-                    return ''
-                })
-                .replace(/(?:closes|fixes) #(\d+)/g, (_, num) => {
-                    closesIssues.push(+num)
-                    return ''
-                })
-                // strip two empty lines into one
-                .replace(/\n{3}/g, '\n\n')
-                // strip whitespaces on every line
-                .split('\n')
-                .map(str => str.trim())
-                .join('\n')
-            if (prNumber) message += ` (#${prNumber})`
-            else if (closesIssues.length > 0) message += ` (${closesIssues.map(n => `#${n}`).join(', ')})`
+        commitsBeforeTag = commits.slice(0, commits.length - justFetchedCommits.length + tagCommitIndex).map(c => ({ message: c.commit.message, sha: c.sha }))
+        break
+    }
 
-            if (sha && !prNumber && closesIssues.length === 0)
-                message += ` ([\`${sha.slice(0, 7)}\`](https://github.com/${repo.owner}/${repo.repo}/commit/${sha}))`
+    /** But before strategy resolve */
+    let resolvedBumpLevel = 0
+    const releaseNotes: NextVersionReturn['commitsByRule'] = {}
+    const processCommitMessage = (message: string, sha?: string) => {
+        let prNumber: string | undefined
+        const closesIssues = [] as number[]
+        message = message
+            // too weak detection
+            .replace(/\(#(\d+)\)$/, (_, num) => {
+                prNumber = num
+                return ''
+            })
+            .replace(/(?:closes|fixes) #(\d+)/g, (_, num) => {
+                closesIssues.push(+num)
+                return ''
+            })
+            // strip two empty lines into one
+            .replace(/\n{3}/g, '\n\n')
+            // strip whitespaces on every line
+            .split('\n')
+            .map(str => str.trim())
+            .join('\n')
+        if (prNumber) message += ` (#${prNumber})`
+        else if (closesIssues.length > 0) message += ` (${closesIssues.map(n => `#${n}`).join(', ')})`
 
-            return message.trim()
-        }
+        if (sha && !prNumber && closesIssues.length === 0) message += ` ([\`${sha.slice(0, 7)}\`](https://github.com/${repo.owner}/${repo.repo}/commit/${sha}))`
 
-        /** 1st group - type, 2nd - scope */
-        const conventionalRegex = /^(?:\S+\s)?(\w+)(\(\S+\))?:/
-        // TODO config.linksToSameCommit
-        commit: for (const { message: commitMessage, sha: commitSha } of commitMessagesBeforeTag) {
-            const bumps: Array<{ bumpLevel: number; notesRule: string; rawMessage: string; scope?: string }> = []
-            /** if true, add message to last `bumps` */
-            let lastSatisfies = false
-            for (const commitMessageLine of commitMessage.split('\n')) {
-                if (!commitMessageLine.trim()) continue
-                const isConventionalCommitMessage = conventionalRegex.test(commitMessageLine)
-                conventionalRegex.lastIndex = 0
-                let currentBump = {
-                    bumpLevel: 0,
-                    notesRule: null as null | string,
-                    versionRule: null! as VersionRule,
-                }
-                for (const versionRule of versionRules) {
-                    if ('conventionalType' in versionRule.matches) {
-                        const [, type] = conventionalRegex.exec(commitMessageLine) || []
-                        conventionalRegex.lastIndex = 0
-                        if (type !== versionRule.matches.conventionalType) continue
-                    } else {
-                        if (!commitMessageLine.match(versionRule.matches)) continue
-                    }
-                    // TODO cancel bumping of commitMessageLine, not whole commit
-                    if (versionRule.bump === false) continue commit
-                    const notesRule = versionRule.notesRule ?? versionRule.bump
-                    const currentPriority = versionPriority[versionRule.bump]
-                    if (currentPriority < currentBump.bumpLevel) continue
-                    currentBump = {
-                        bumpLevel: currentPriority,
-                        notesRule,
-                        versionRule,
-                    }
-                }
+        return message.trim()
+    }
+    // #endregion
 
-                if (!currentBump.notesRule) {
-                    if (isConventionalCommitMessage) lastSatisfies = false
-                    // TODO continue to use .at when node versions are resolved
-                    else if (lastSatisfies) bumps.slice(-1)[0]!.rawMessage += `\n${commitMessageLine}`
-
+    /** 1st group - type, 2nd - scope */
+    const conventionalRegex = /^(?:\S+\s)?(\w+)(\(\S+\))?:/
+    // TODO config.linksToSameCommit
+    // eslint-disable-next-line no-labels
+    commit: for (const { message: commitMessage, sha: commitSha } of commitsBeforeTag) {
+        const bumps: Array<{ bumpLevel: number; notesRule: string; rawMessage: string; scope?: string }> = []
+        /** if true, add message to last `bumps` */
+        let lastSatisfies = false
+        for (const commitMessageLine of commitMessage.split('\n')) {
+            if (!commitMessageLine.trim()) continue
+            const isConventionalCommitMessage = conventionalRegex.test(commitMessageLine)
+            conventionalRegex.lastIndex = 0
+            let currentBump = {
+                bumpLevel: 0,
+                notesRule: undefined as undefined | string,
+                versionRule: undefined! as VersionRule,
+            }
+            for (const versionRule of versionRules) {
+                if ('conventionalType' in versionRule.matches) {
+                    const [, type] = conventionalRegex.exec(commitMessageLine) || []
+                    conventionalRegex.lastIndex = 0
+                    if (type !== versionRule.matches.conventionalType) continue
+                    // eslint-disable-next-line zardoy-config/unicorn/prefer-regexp-test, zardoy-config/@typescript-eslint/prefer-regexp-exec
+                } else if (!commitMessageLine.match(versionRule.matches)) {
                     continue
                 }
 
-                const { bumpLevel, notesRule, versionRule } = currentBump
-                lastSatisfies = true
-                // TODO config.linksToSameCommit
-                // TODO move it to top
-                const scope = conventionalRegex.exec(commitMessageLine)?.[2]
-                conventionalRegex.lastIndex = 0
-                let rawMessage = commitMessageLine
-                if (versionRule.stripByRegex ?? true)
-                    rawMessage = rawMessage.replace(versionRule.matches instanceof RegExp ? versionRule.matches : conventionalRegex, '')
-
-                if (versionRule.startsNew || bumps.length === 0) {
-                    bumps.push({
-                        bumpLevel,
-                        notesRule,
-                        rawMessage,
-                        scope,
-                    })
-                } else {
-                    const lastBump = bumps.slice(-1)[0]!
-                    bumps.splice(-1, 1, {
-                        ...lastBump,
-                        bumpLevel,
-                        notesRule,
-                        rawMessage: `${lastBump.rawMessage}\n${rawMessage}`,
-                    })
+                // TODO cancel bumping of commitMessageLine, not whole commit
+                if (versionRule.bump === false) continue commit
+                const notesRule = versionRule.notesRule ?? versionRule.bump
+                const currentPriority = versionPriority[versionRule.bump]
+                if (currentPriority < currentBump.bumpLevel) continue
+                currentBump = {
+                    bumpLevel: currentPriority,
+                    notesRule,
+                    versionRule,
                 }
             }
 
-            for (const { bumpLevel, notesRule, rawMessage, scope } of bumps) {
-                if (!releaseNotes[notesRule]) releaseNotes[notesRule] = []
-                // releaseNotes[notesRule]!.push({ message: processCommitMessage(rawMessage), scope })
-                const message = processCommitMessage(rawMessage, commitSha)
-                // commit sha undefined mostly on testing
-                releaseNotes[notesRule]!.push(scope ? `**${scope.slice(1, -1)}**: ${message}` : message)
-                if (bumpLevel < resolvedBumpLevel) continue
-                resolvedBumpLevel = bumpLevel
-            }
-        }
+            if (!currentBump.notesRule) {
+                if (isConventionalCommitMessage) lastSatisfies = false
+                // TODO continue to use .at when node versions are resolved
+                else if (lastSatisfies) bumps.slice(-1)[0]!.rawMessage += `\n${commitMessageLine}`
 
-        // TODO respect order config with l
-        let nextVersion: undefined | string
-        let bumpType = getBumpTypeByPriority(resolvedBumpLevel)
-        if (bumpType === 'none' || config.bumpingVersionStrategy === 'none') {
-        } else {
-            const strategyConfig = versionBumpingStrategies[config.bumpingVersionStrategy]
-            if (strategyConfig.isAppliable && !strategyConfig.isAppliable(tagVersion)) {
+                continue
+            }
+
+            const { bumpLevel, notesRule, versionRule } = currentBump
+            lastSatisfies = true
+            // TODO config.linksToSameCommit
+            // TODO move it to top
+            const scope = conventionalRegex.exec(commitMessageLine)?.[2]
+            conventionalRegex.lastIndex = 0
+            let rawMessage = commitMessageLine
+            if (versionRule.stripByRegex ?? true)
+                rawMessage = rawMessage.replace(versionRule.matches instanceof RegExp ? versionRule.matches : conventionalRegex, '')
+
+            if (versionRule.startsNew || bumps.length === 0) {
+                bumps.push({
+                    bumpLevel,
+                    notesRule,
+                    rawMessage,
+                    scope,
+                })
             } else {
-                bumpType = strategyConfig[bumpType]
+                const lastBump = bumps.slice(-1)[0]!
+                bumps.splice(-1, 1, {
+                    ...lastBump,
+                    bumpLevel,
+                    notesRule,
+                    rawMessage: `${lastBump.rawMessage}\n${rawMessage}`,
+                })
             }
         }
 
-        if (bumpType !== 'none') {
-            nextVersion = bumpVersion(tagVersion, bumpType)!
-            if (nextVersion === null) throw new Error('Just bumped version is invalid')
+        for (const { bumpLevel, notesRule, rawMessage, scope } of bumps) {
+            if (!releaseNotes[notesRule]) releaseNotes[notesRule] = []
+            // releaseNotes[notesRule]!.push({ message: processCommitMessage(rawMessage), scope })
+            const message = processCommitMessage(rawMessage, commitSha)
+            // commit sha undefined mostly on testing
+            releaseNotes[notesRule]!.push(scope ? `**${scope.slice(1, -1)}**: ${message}` : message)
+            if (bumpLevel < resolvedBumpLevel) continue
+            resolvedBumpLevel = bumpLevel
         }
+    }
 
-        return {
-            bumpType,
-            nextVersion,
-            commitsByRule: releaseNotes,
+    // TODO respect order config with l
+    let nextVersion: undefined | string
+    let bumpType = getBumpTypeByPriority(resolvedBumpLevel)
+    if (bumpType === 'none' || config.bumpingVersionStrategy === 'none') {
+    } else {
+        const strategyConfig = versionBumpingStrategies[config.bumpingVersionStrategy]
+        if (strategyConfig.isAppliable && !strategyConfig.isAppliable(tagVersion)) {
+        } else {
+            bumpType = strategyConfig[bumpType]
         }
+    }
+
+    if (bumpType !== 'none') {
+        nextVersion = bumpVersion(tagVersion, bumpType)!
+        if (nextVersion === null) throw new Error('Just bumped version is invalid')
+    }
+
+    return {
+        bumpType,
+        nextVersion,
+        commitsByRule: releaseNotes,
     }
 }
