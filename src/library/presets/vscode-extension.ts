@@ -33,11 +33,11 @@ export const sharedMain = async ({ repo }: InputData<'vscode-extension'>) => {
     const newReadme = await markdownRemoveHeading(readme, 'Extension Development Notes')
     await fs.promises.writeFile(hasCode ? 'out/README.MD' : 'README.MD', newReadme)
     // even if not on CI, updates to latest version
-    startGroup('pnpm i -g vsce')
-    await execa('pnpm', 'i -g vsce'.split(' '), { stdio: 'inherit' })
-    endGroup()
+    // startGroup('pnpm i -g vsce')
+    // await execa('pnpm', 'i -g vsce'.split(' '), { stdio: 'inherit' })
+    // endGroup()
     const vsixPath = join(process.cwd(), 'output.vsix')
-    await safeExeca('pnpm', ['vsce', 'package', '--out', vsixPath], {
+    await safeExeca('pnpx', ['-y', 'vsce', 'package', '--out', vsixPath], {
         cwd: join(process.cwd(), 'out'),
     })
     const SIZE_LIMIT = 3 * 1024 * 1024 // 3 MG
@@ -50,8 +50,8 @@ export const main: PresetMain<'vscode-extension'> = async input => {
 
     const { octokit, repo, presetConfig } = input
     startGroup('publish')
-    if (presetConfig.publishMarketplace) await execa('pnpm', ['vsce', 'publish', '--packagePath', vsixPath], { stdio: 'inherit' })
-    if (presetConfig.publishOvsx) await execa('pnpx -y ovsx', ['publish', '--packagePath', vsixPath], { stdio: 'inherit' })
+    if (presetConfig.publishMarketplace) await execa('pnpx', ['-y', 'vsce', 'publish', '--packagePath', vsixPath], { stdio: 'inherit' })
+    if (presetConfig.publishOvsx) await execa('pnpx', ['-y', 'ovsx', 'publish', '--packagePath', vsixPath], { stdio: 'inherit' })
     endGroup()
     const { homepage } = (await octokit.repos.get({ ...repo.octokit })).data
     if (homepage && !homepage.includes('marketplace.visualstudio')) throw new Error('Homepage must go to extension marketplace')
@@ -66,7 +66,7 @@ export const main: PresetMain<'vscode-extension'> = async input => {
         return {
             assets: [
                 {
-                    name: `${packageJson.name!}-${packageJson.version}.vsix`,
+                    name: `${packageJson.name!}-${packageJson.version!}.vsix`,
                     path: vsixPath,
                 },
             ],
