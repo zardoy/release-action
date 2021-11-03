@@ -353,11 +353,11 @@ test("Extracts sha's correctly", async () => {
       "commitsByRule": Object {
         "major": Array [
           "add new feature
-    config was removed ([\`7f84682\`](https://github.com/user/repository/commit/7f8468286354936e8817607d7a2087715bbe1854))",
+    config was removed [\`7f84682\`](https://github.com/user/repository/commit/7f8468286354936e8817607d7a2087715bbe1854)",
         ],
         "patch": Array [
           "something fixed but we don't care",
-          "fix serious issue ([\`7f84682\`](https://github.com/user/repository/commit/7f8468286354936e8817607d7a2087715bbe1854))",
+          "fix serious issue [\`7f84682\`](https://github.com/user/repository/commit/7f8468286354936e8817607d7a2087715bbe1854)",
           "something was contributed (#123)",
         ],
       },
