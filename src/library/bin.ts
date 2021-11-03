@@ -2,6 +2,7 @@ import { promises } from 'fs'
 import { Octokit } from '@octokit/rest'
 import { defaultsDeep } from 'lodash'
 import { modifyPackageJsonFile } from 'modify-json-file'
+import { cosmiconfig } from 'cosmiconfig'
 import { getNextVersionAndReleaseNotes } from './bumpVersion'
 import { generateChangelog } from './changelogGenerator'
 import { defaultConfig, GlobalPreset } from './config'
@@ -12,8 +13,9 @@ import { OutputData, PresetExports } from './presets/shared'
     const preset = process.argv[2] as GlobalPreset
     if (!preset) throw new Error('Preset must be defined!')
     if (!process.env.CI) throw new Error('The tools is intended to be run in GitHub action workflow')
-    // TODO cosmiconffig
-    const config = defaultsDeep({}, defaultConfig)
+    const explorer = cosmiconfig('release')
+    const userConfig = await explorer.search()
+    const config = defaultsDeep(userConfig?.config || {}, defaultConfig)
     const [owner, repoName] = process.env.GITHUB_REPOSITORY!.split('/')
     const repo = {
         owner: owner!,
@@ -22,13 +24,13 @@ import { OutputData, PresetExports } from './presets/shared'
     const octokit = new Octokit({
         auth: process.env.GITHUB_TOKEN,
     })
-    const { commitsByRule, nextVersion } = await getNextVersionAndReleaseNotes({
+    const { commitsByRule, nextVersion, bumpType } = await getNextVersionAndReleaseNotes({
         octokit,
         config: defaultConfig,
         repo,
     })
     if (!nextVersion) return
-    const changelog = generateChangelog(commitsByRule, 'default')
+    const changelog = generateChangelog(commitsByRule, 'default', { bumpType })
     await modifyPackageJsonFile(
         { dir: '.' },
         {

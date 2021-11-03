@@ -177,7 +177,6 @@ export const getNextVersionAndReleaseNotesFromTag = async ({
     // #region Fetch commits before tag (exlusive)
     let commitsBeforeTag: Array<{ message: string; sha?: string }>
     for (let i = 1; true; i++) {
-        // eslint-disable-next-line no-await-in-loop
         const { data: justFetchedCommits } = await octokit.repos.listCommits({
             ...repo,
             // i don't think it matters: 30 or 100

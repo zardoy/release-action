@@ -41,6 +41,22 @@ export const builtinPlugins = makeBuiltintPlugins({
     },
 })
 
+export type GlobalPreset = 'node' | 'npm' | 'vscode-extension' | 'vscode-extension-vsix'
+
+const makePresetConfigs = <T extends Record<GlobalPreset, Record<string, any>>>(t: T) => t
+
+/** config that exclusive to some preset */
+export const presetsConfigDefaults = makePresetConfigs({
+    'vscode-extension': {
+        publishOvsx: true,
+        publishMarketplace: true,
+        attachVsix: false,
+    },
+    'vscode-extension-vsix': {},
+    node: {},
+    npm: {},
+})
+
 export interface Config {
     initialVersion: {
         version: SemverVersionString
@@ -55,12 +71,14 @@ export interface Config {
      */
     // TODO
     // requirePublishKeyword: boolean | RegExp
+    // publishSkipKeyword
     linksToSameCommit: boolean
     /** Changelog generator config */
     changelog: {
         /** now affects only headings style */
         style: 'default' /*  | 'emoji' */
     }
+    // preset: typeof presetsConfigDefaults
     /** how to order notes by date of the commit. just reverses in case of `desc` */
     // notesOrder: 'asc-by-date' | 'desc-by-date'
 }
@@ -79,12 +97,5 @@ export const defaultConfig: Config = {
     // requirePublishKeyword: false,
     // notesOrder: 'asc-by-date',
     linksToSameCommit: true,
+    // preset: {},
 }
-
-export type GlobalPreset = 'node' | 'npm' | 'vscode-extension' | 'vscode-extension-vsix'
-
-/** this is just config overrides, however the process or publishing is heavily customized in its own files */
-// export const presetConfigOverrides: Record<GlobalPreset, Partial<Config>> = {
-//     npm: {},
-//     'vscode-extension': {},
-// }
