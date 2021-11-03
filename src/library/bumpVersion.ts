@@ -221,11 +221,10 @@ export const getNextVersionAndReleaseNotesFromTag = async ({
         // TODO config.linksToSameCommit
         commit: for (const { message: commitMessage, sha: commitSha } of commitMessagesBeforeTag) {
             const bumps: Array<{ bumpLevel: number; notesRule: string; rawMessage: string; scope?: string }> = []
-            let lineNumber = -1
             /** if true, add message to last `bumps` */
             let lastSatisfies = false
             for (const commitMessageLine of commitMessage.split('\n')) {
-                lineNumber++
+                if (!commitMessageLine.trim()) continue
                 const isConventionalCommitMessage = conventionalRegex.test(commitMessageLine)
                 conventionalRegex.lastIndex = 0
                 let currentBump = {

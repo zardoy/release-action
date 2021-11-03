@@ -410,7 +410,6 @@ Tests were hard to fix`
         ],
         "patch": Array [
           "This rare bug was finally fixed
-
     Some background for bug goes here... (#33343)",
           "This rare bug was finally fixed
 
