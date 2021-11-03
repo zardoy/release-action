@@ -94,8 +94,8 @@ export const generateChangelog = (
     const headings = [] as Array<{ order: number; markdown: string }>
     for (const [noteRule, messages] of Object.entries(messagesByRule)) {
         let markdown = ''
-        const rule = notesGenerators[rulesStyle][noteRule]
-        markdown += `${rule.groupTitle}\n\n`
+        const rule = notesGenerators[rulesStyle][noteRule] as NoteGeneratorDefinition
+        markdown += `${rule.heading}\n\n`
         markdown += messages.map(msg => `- ${msg}`).join('\n')
         headings.push({
             markdown,
