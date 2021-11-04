@@ -37,7 +37,7 @@ export const sharedMain = async ({ repo }: InputData<'vscode-extension'>) => {
     // await execa('pnpm', 'i -g vsce'.split(' '), { stdio: 'inherit' })
     // endGroup()
     const vsixPath = join(process.cwd(), 'output.vsix')
-    await safeExeca('pnpx', ['-y', 'vsce', 'package', '--out', vsixPath], {
+    await safeExeca('vsce', ['package', '--out', vsixPath], {
         cwd: join(process.cwd(), 'out'),
     })
     const SIZE_LIMIT = 3 * 1024 * 1024 // 3 MG
@@ -50,8 +50,8 @@ export const main: PresetMain<'vscode-extension'> = async input => {
 
     const { octokit, repo, presetConfig } = input
     startGroup('publish')
-    if (presetConfig.publishMarketplace) await execa('pnpx', ['-y', 'vsce', 'publish', '--packagePath', vsixPath], { stdio: 'inherit' })
-    if (presetConfig.publishOvsx) await execa('pnpx', ['-y', 'ovsx', 'publish', '--packagePath', vsixPath], { stdio: 'inherit' })
+    if (presetConfig.publishMarketplace) await execa('vsce', ['publish', '--packagePath', vsixPath], { stdio: 'inherit' })
+    if (presetConfig.publishOvsx) await execa('ovsx', ['publish', '--packagePath', vsixPath], { stdio: 'inherit' })
     endGroup()
     const { homepage } = (await octokit.repos.get({ ...repo.octokit })).data
     if (homepage && !homepage.includes('marketplace.visualstudio')) throw new Error('Homepage must go to extension marketplace')
