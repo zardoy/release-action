@@ -23,5 +23,6 @@ experiment-*
 .env.*.local
 
 .vscode-test
+.eslintcache
 
 octokit-testing.ts
