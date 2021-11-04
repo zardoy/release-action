@@ -33,7 +33,7 @@ export const main = async ({ repo, octokit }: InputData<'npm'>) => {
     const packageJson = await readPackageJsonFile({ dir: '.' })
     if (packageJson.private) throw new Error("Packages that are going to publish to NPM can't be private")
     if (packageJson.scripts?.build) await runBuild()
-    if (packageJson.scripts?.prepublishOnly) await safeExeca('pnpm', 'prepublishOnly')
+    else if (packageJson.scripts?.prepublishOnly) await safeExeca('pnpm', 'prepublishOnly')
     else throw new Error('Nothing to build, specify script first (prepublishOnly or build)')
 
     // not really great as it runs before prepublishOnly
