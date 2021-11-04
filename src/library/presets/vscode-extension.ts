@@ -1,12 +1,12 @@
 import fs from 'fs'
 import { join, posix } from 'path'
+import { endGroup, startGroup } from '@actions/core'
 import execa from 'execa'
 import { readPackageJsonFile } from 'typed-jsonfile'
-import { startGroup, endGroup } from '@actions/core'
-import { markdownRemoveHeading } from '../readmeUtils'
-import { InputData, PresetMain } from '../presets-common/type'
 import { safeExeca } from '../presets-common/execute'
-import { execAsync } from '../utils'
+import { InputData, PresetMain } from '../presets-common/type'
+import { markdownRemoveHeading } from '../readmeUtils'
+import { execAsStep } from '../utils'
 // always pnpm is used in this preset
 
 /** shared main for vscode-extension* presets */
@@ -54,6 +54,7 @@ export const main: PresetMain<'vscode-extension'> = async input => {
     const { vsixPath } = await sharedMain(input)
 
     const { octokit, repo, presetConfig } = input
+    await execAsStep('pnpm', 'i -g vsce ovsx')
     startGroup('publish')
     if (presetConfig.publishMarketplace)
         await execa('vsce', ['publish', '--packagePath', vsixPath], {
