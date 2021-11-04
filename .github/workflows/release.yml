@@ -23,8 +23,9 @@ jobs:
         - uses: pnpm/action-setup@v2.0.1
           with:
             version: latest
+            # not sure that scripts always should be ignored
             run_install: |
-                args: [--frozen-lockfile, --strict-peer-dependencies]
+                args: [--frozen-lockfile, --strict-peer-dependencies, --ignore-scripts]
         - run: pnpm build
         - run: node build/bin.js npm
           env:
