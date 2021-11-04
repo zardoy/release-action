@@ -22,7 +22,7 @@
         "modify-json-file": "^1.2.1",
         "remark": "13",
         "semver": "^7.3.5",
-        "typed-jsonfile": "^0.1.1"
+        "typed-jsonfile": "^0.2.0"
     },
     "devDependencies": {
         "@babel/cli": "^7.16.0",
