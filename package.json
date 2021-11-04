@@ -47,7 +47,6 @@
     },
     "lint-staged": {
         "*.{ts,tsx}": [
-            "prettier --no-editorconfig --arrow-parens avoid --no-semi --tab-width 4 --trailing-comma all --write",
             "jest --bail --findRelatedTests"
         ]
     }
