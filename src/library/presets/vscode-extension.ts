@@ -13,6 +13,8 @@ import { execAsStep } from '../utils'
 export const sharedMain = async ({ repo }: InputData<'vscode-extension'>) => {
     const initialPackageJson = await readPackageJsonFile({ dir: '.' })
     const hasCode = fs.existsSync('src/extension.ts')
+    await execAsStep('pnpm', 'i -g vsce ovsx')
+    await execAsStep('vsce', '-V')
     if (!initialPackageJson.scripts?.build && hasCode) {
         startGroup('vscode-framework build')
         await safeExeca('pnpm', 'vscode-framework build')
@@ -54,7 +56,6 @@ export const main: PresetMain<'vscode-extension'> = async input => {
     const { vsixPath } = await sharedMain(input)
 
     const { octokit, repo, presetConfig } = input
-    await execAsStep('pnpm', 'i -g vsce ovsx')
     startGroup('publish')
     if (presetConfig.publishMarketplace)
         await execa('vsce', ['publish', '--packagePath', vsixPath], {
