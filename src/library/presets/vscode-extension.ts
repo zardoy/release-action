@@ -39,13 +39,9 @@ export const sharedMain = async ({ repo }: InputData<'vscode-extension'>) => {
     const readme = await fs.promises.readFile('README.MD', 'utf-8')
     const newReadme = await markdownRemoveHeading(readme, 'Extension Development Notes')
     await fs.promises.writeFile(hasCode ? 'out/README.MD' : 'README.MD', newReadme)
-    // even if not on CI, updates to latest version
-    // startGroup('pnpm i -g vsce')
-    // await execa('pnpm', 'i -g vsce'.split(' '), { stdio: 'inherit' })
-    // endGroup()
     const vsixPath = join(process.cwd(), 'output.vsix')
     await safeExeca('vsce', ['package', '--out', vsixPath], {
-        cwd: join(process.cwd(), 'out'),
+        cwd: hasCode ? join(process.cwd(), 'out') : '.',
     })
     const SIZE_LIMIT = 3 * 1024 * 1024 // 3 MG
     if ((await fs.promises.stat(vsixPath)).size > SIZE_LIMIT) throw new Error('SIZE_LIMIT exceeded in 3 MG')
