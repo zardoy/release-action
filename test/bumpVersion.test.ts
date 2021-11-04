@@ -40,6 +40,7 @@ const mockPackageJsonOnce = (packageJson: Record<string, any>) => {
 test('Initial release', async () => {
     mockPackageJsonOnce({
         private: true,
+        version: '0.0.0',
     })
     expect(
         await getNextVersionAndReleaseNotes({
