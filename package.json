@@ -41,6 +41,7 @@
         "eslint-plugin-zardoy-config": "^0.1.1",
         "husky": "^7.0.4",
         "jest": "^27.3.1",
+        "lint-staged": "^11.2.6",
         "prettier": "^2.4.1",
         "type-fest": "^2.5.2",
         "typescript": "^4.4.4"
