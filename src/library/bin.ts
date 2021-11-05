@@ -24,7 +24,7 @@ program
     .action(async (preset: GlobalPreset, options: Options) => {
         try {
             if (!process.env.GITHUB_TOKEN) throw new Error('GITHUB_TOKEN is not defined. Make sure you pass it via env from GitHub action')
-            if (!process.env.CI) throw new Error('The tools is intended to be run in GitHub action workflow')
+            if (!process.env.CI) throw new Error('This tool is intended to be run in GitHub action workflow')
             const userConfig = await cosmiconfig('release').search()
             const config = defaultsDeep(userConfig?.config || {}, defaultConfig) as Config
             config.preset = defaultsDeep(config.preset, presetSpecificConfigDefaults[preset])
