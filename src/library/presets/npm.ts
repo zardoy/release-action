@@ -42,7 +42,7 @@ export const main: PresetMain<'npm'> = async ({ repo, octokit, versionBumpInfo: 
         // Tries to fetch latest version from npm. Thanks to fast jsdelivr
         const {
             body: { version: latestVersionOnNpm },
-        } = await got(`https://cdn.jsdelivr.net/npm/${name!}/package.json`, { responseType: 'json' })
+        } = await got(`https://cdn.jsdelivr.net/npm/${packageJson.name!}/package.json`, { responseType: 'json' })
         if (!gt(packageJson.version!, latestVersionOnNpm)) throw new Error('When no tags found, version in package.json must be greater than that on NPM')
     }
 
