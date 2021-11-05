@@ -20,6 +20,7 @@ type SharedActions = {
     updateDescription: "always" | "ifEmpty" | false
     updateKeywords: "always" | "ifEmpty" | false
     updateHomepage: false | GetHomepageLink
+    generateFields: ("repository")[]
 }
 type MaybePromise<T> = T | Promise<T>
 type RepositoryMetadata =
@@ -36,6 +37,7 @@ const defaults: SharedActions = {
     updateDescription: "ifEmpty",
     updateKeywords: false,
     updateHomepage: false,
+    generateFields: ["repository"]
 }
 
 const presetSpecificOverrides: Partial<
