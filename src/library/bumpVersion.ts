@@ -110,6 +110,8 @@ export interface NextVersionReturn {
               [noteRule: string]: string[]
           }
         | { rawOverride: string }
+    /** No tags found, and package version doesn't start with 0.0.0 */
+    usingInExistingEnv?: boolean
 }
 
 /** DEFAULT. wrapper to use latest tag is present */
@@ -120,21 +122,14 @@ export const getNextVersionAndReleaseNotes = async ({ octokit, repo, config }: B
     })
     const noTags = tags.length === 0
     if (noTags) {
-        const { name, private: pkgPrivate, version: currentVersion } = await readPackageJsonFile({ dir: '.' })
-        // TODO! move from here to npm preset
-        if (!pkgPrivate) {
-            // Tries to fetch latest version from npm. Thanks to fast jsdelivr
-            const {
-                body: { version: latestVersionOnNpm },
-            } = await got(`https://cdn.jsdelivr.net/npm/${name!}/package.json`, { responseType: 'json' })
-            if (!gt(currentVersion!, latestVersionOnNpm)) throw new Error('When no tags found, version in package.json must be greater than that on NPM')
-        }
+        const { version: currentVersion } = await readPackageJsonFile({ dir: '.' })
 
         if (!currentVersion!.startsWith('0.0.0'))
             return {
                 bumpType: 'none',
                 nextVersion: currentVersion,
                 commitsByRule: { rawOverride: config.initialVersion.releaseNotesWithExisting },
+                usingInExistingEnv: true,
             }
 
         return {

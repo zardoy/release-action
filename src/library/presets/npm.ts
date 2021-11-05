@@ -1,20 +1,21 @@
 import { existsSync } from 'fs'
 import { join } from 'path'
+import { endGroup, startGroup } from '@actions/core'
 import execa from 'execa'
+import got from 'got'
 import { defaultsDeep } from 'lodash'
+import { gt } from 'semver'
 import { PackageJson } from 'type-fest'
-import { readPackageJsonFile, readJsonFile, writePackageJsonFile, readTsconfigJsonFile } from 'typed-jsonfile'
-import { startGroup, endGroup } from '@actions/core'
-import { InputData } from '../presets-common/type'
+import { readPackageJsonFile, readTsconfigJsonFile, writePackageJsonFile } from 'typed-jsonfile'
+import { PresetMain } from '../presets-common/type'
 
 // going to add more advanced functionality to provide better experience for forks
 
-export const main = async ({ repo, octokit }: InputData<'npm'>) => {
+export const main: PresetMain<'npm'> = async ({ repo, octokit, versionBumpInfo: { usingInExistingEnv } }) => {
     const initialPackageJson = await readPackageJsonFile({ dir: '.' })
     const fieldsToRemove: string[] = []
     const generatedFields: Partial<PackageJson> = {
         files: ['build'],
-        repository: repo.url,
     }
 
     // important defaul
@@ -32,21 +33,28 @@ export const main = async ({ repo, octokit }: InputData<'npm'>) => {
         fieldsToRemove.push(fieldName)
     }
 
-    if (fieldsToRemove.length) {
-        // TODO create pr with props removed
-    }
-
     // PREPARE package.json
-    const packageJson = defaultsDeep(initialPackageJson, generatedFields)
+    const packageJson = defaultsDeep(initialPackageJson, generatedFields) as PackageJson
     await writePackageJsonFile({ dir: '.' }, packageJson)
 
     if (packageJson.private) throw new Error("Packages that are going to publish to NPM can't be private")
+    if (usingInExistingEnv) {
+        // Tries to fetch latest version from npm. Thanks to fast jsdelivr
+        const {
+            body: { version: latestVersionOnNpm },
+        } = await got(`https://cdn.jsdelivr.net/npm/${name!}/package.json`, { responseType: 'json' })
+        if (!gt(packageJson.version!, latestVersionOnNpm)) throw new Error('When no tags found, version in package.json must be greater than that on NPM')
+    }
 
     validatePaths(process.cwd(), await readPackageJsonFile({ dir: process.cwd() }))
 
     startGroup('publish')
     await execa('pnpm', ['publish', '--access', 'public', '--no-git-checks', '--ignore-scripts'], { stdio: 'inherit' })
     endGroup()
+
+    return {
+        packageJsonFieldsRemove: fieldsToRemove,
+    }
 }
 
 const validatePaths = (cwd: string, json: PackageJson) => {

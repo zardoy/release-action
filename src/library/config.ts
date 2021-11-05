@@ -43,7 +43,7 @@ export const builtinPlugins = makeBuiltintPlugins({
     },
 })
 
-export type GlobalPreset = 'node' | 'npm' | 'vscode-extension' | 'vscode-extension-vsix'
+export type GlobalPreset = 'node' | 'npm' | 'vscode-extension'
 
 const makePresetConfigs = <T extends Record<GlobalPreset, Record<string, any>>>(t: T) => t
 
@@ -53,7 +53,6 @@ export const presetSpecificConfigDefaults = makePresetConfigs({
         publishMarketplace: true,
         attachVsix: false,
     },
-    'vscode-extension-vsix': {},
     node: {},
     npm: {},
 })
