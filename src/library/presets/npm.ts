@@ -20,6 +20,7 @@ export const main: PresetMain<'npm'> = async ({ repo, octokit, versionBumpInfo: 
 
     // important defaul
     const buildDir = (await readTsconfigJsonFile({ dir: '.' })).compilerOptions?.outDir ?? 'build'
+    if (existsSync('src/bin.ts')) generatedFields.bin = join(buildDir, 'bin.js')
     if (existsSync(join(buildDir, 'index.d.ts'))) {
         generatedFields.main = join(buildDir, 'index.js')
         generatedFields.types = join(buildDir, 'index.d.ts')
