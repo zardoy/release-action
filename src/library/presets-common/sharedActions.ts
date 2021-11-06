@@ -2,7 +2,7 @@ import { endGroup, startGroup } from '@actions/core'
 import { Octokit, RestEndpointMethodTypes } from '@octokit/rest'
 import { defaultsDeep } from 'lodash'
 import { PackageJson } from 'type-fest'
-import { readPackageJsonFile } from 'typed-jsonfile'
+import { readPackageJsonFile, writePackageJsonFile } from 'typed-jsonfile'
 import { GlobalPreset } from '../config'
 import { runTestsIfAny, safeExeca } from './execute'
 
@@ -96,6 +96,8 @@ export const runSharedActions = async (preset: GlobalPreset, octokit: Octokit, r
         if (!enablement) continue
         if (field === 'repository') packageJson[field] = `https://github.com/${repo.owner}/${repo.repo}`
     }
+
+    await writePackageJsonFile({ dir: '.' }, packageJson)
 
     const repositoryMetadata = (await octokit.repos.get({ ...repo })).data
     const newMetadata: Partial<RestEndpointMethodTypes['repos']['update']['parameters']> = {}
