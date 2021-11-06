@@ -367,6 +367,34 @@ test("Extracts sha's correctly", async () => {
   `)
 })
 
+// TODO
+test.skip('Strips empty lines', async () => {
+    expect(
+        await getNextVersionAndReleaseNotes({
+            octokit: getMockedOctokit(
+                [{ name: 'v0.0.7', commit: { sha: '123' } }],
+                [
+                    {
+                        message: `feat: add support for reading jsonc files
+By default it's enabled when path ends with \`.jsonc\`
+feat: options must be object and not null or string
+BREAKING
+fix(types): allow to omit 2nd arg for \`readTsconfigJsonFile\`
+`,
+                        sha: '328',
+                    },
+                    {
+                        message: 'feat: should not be here',
+                        sha: '123',
+                    },
+                ],
+            ),
+
+            ...args,
+        }),
+    ).toMatchInlineSnapshot(``)
+})
+
 // give better name to the test?
 test('Operates on description properly', async () => {
     const includeCommit = `
