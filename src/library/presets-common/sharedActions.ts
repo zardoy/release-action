@@ -65,7 +65,10 @@ const presetSpecificOverrides: Partial<Record<GlobalPreset, Partial<SharedAction
 // eslint-disable-next-line complexity
 export const runSharedActions = async (preset: GlobalPreset, octokit: Octokit, repo: { repo: string; owner: string }) => {
     const packageJson = await readPackageJsonFile({ dir: '.' })
-    const actionsConfig = defaultsDeep(defaults, presetSpecificOverrides[preset]) as SharedActions
+    const actionsConfig = defaultsDeep(presetSpecificOverrides[preset], defaults) as SharedActions
+    startGroup('Preset config for shared actions')
+    console.log(actionsConfig)
+    endGroup()
     if (actionsConfig.runTest) await runTestsIfAny()
 
     if (actionsConfig.runBuild) {

@@ -28,6 +28,10 @@ program
             const userConfig = await cosmiconfig('release').search()
             const config = defaultsDeep(userConfig?.config || {}, defaultConfig) as Config
             config.preset = defaultsDeep(config.preset, presetSpecificConfigDefaults[preset])
+            startGroup('Resolved config')
+            console.log('Using user config: ', !!userConfig)
+            console.log(actionsConfig)
+            endGroup()
             const [owner, repoName] = process.env.GITHUB_REPOSITORY!.split('/')
             const repo = {
                 owner: owner!,
