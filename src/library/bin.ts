@@ -30,7 +30,7 @@ program
             config.preset = defaultsDeep(config.preset, presetSpecificConfigDefaults[preset])
             startGroup('Resolved config')
             console.log('Using user config: ', !!userConfig)
-            console.log(actionsConfig)
+            console.log(config)
             endGroup()
             const [owner, repoName] = process.env.GITHUB_REPOSITORY!.split('/')
             const repo = {
