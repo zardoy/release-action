@@ -16,12 +16,14 @@ export type InputData<T extends GlobalPreset> = {
     presetConfig: PresetSpecificConfigs[T]
 }
 
-export type OutputData = void | {
+export type OutputData = {
     assets?: Array<{ name: string; path: string }>
     postRun?: (octokit: Octokit, packageJson: PackageJson) => any
-    packageJsonFieldsRemove?: string[]
+    jsonFilesFieldsToRemove?: {
+        [relativePath: string]: Set<string>
+    }
 }
 
-export type PresetMain<T extends GlobalPreset> = (data: InputData<T>) => Promise<OutputData>
+export type PresetMain<T extends GlobalPreset> = (data: InputData<T>) => Promise<void | OutputData>
 
 export type PresetExports = { main: PresetMain<any> }

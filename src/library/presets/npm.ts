@@ -9,37 +9,16 @@ import { PackageJson } from 'type-fest'
 import { readPackageJsonFile, readTsconfigJsonFile, writePackageJsonFile } from 'typed-jsonfile'
 import { PresetMain } from '../presets-common/type'
 import { readRootPackageJson } from '../util'
+import { generateNpmPackageJsonFields } from '../presets-common/generatePackageJsonFields'
 
 // going to add more advanced functionality to provide better experience for forks
 
 export const main: PresetMain<'npm'> = async ({ presetConfig, versionBumpInfo: { usingInExistingEnv } }) => {
     const initialPackageJson = await readRootPackageJson()
-    const fieldsToRemove: string[] = []
-    const generatedFields: Partial<PackageJson> = {
-        files: ['build'],
-    }
+    if (initialPackageJson.private) throw new Error("Packages that are going to publish to NPM can't be private")
 
-    // important defaul
-    const buildDir = (await readTsconfigJsonFile({ dir: '.' })).compilerOptions?.outDir ?? 'build'
-    if (existsSync('src/bin.ts')) generatedFields.bin = join(buildDir, 'bin.js')
-    if (existsSync(join(buildDir, 'index.d.ts'))) {
-        generatedFields.main = join(buildDir, 'index.js')
-        generatedFields.types = join(buildDir, 'index.d.ts')
-    }
+    const { packageJson, fieldsToRemove } = await generateNpmPackageJsonFields('.', presetConfig)
 
-    const alwaysRemove = new Set(['repository'])
-    for (const [fieldName, generatedValue] of Object.entries(generatedFields)) {
-        if (!(fieldName in initialPackageJson)) continue
-        if (generatedValue === initialPackageJson[fieldName] && !alwaysRemove.has(fieldName)) continue
-
-        fieldsToRemove.push(fieldName)
-    }
-
-    // PREPARE package.json
-    const packageJson = defaultsDeep(initialPackageJson, generatedFields) as PackageJson
-    await writePackageJsonFile({ dir: '.' }, packageJson)
-
-    if (packageJson.private) throw new Error("Packages that are going to publish to NPM can't be private")
     if (usingInExistingEnv) {
         // Tries to fetch latest version from npm. Thanks to fast jsdelivr
         const {
@@ -55,7 +34,9 @@ export const main: PresetMain<'npm'> = async ({ presetConfig, versionBumpInfo: {
     endGroup()
 
     return {
-        packageJsonFieldsRemove: fieldsToRemove,
+        jsonFilesFieldsToRemove: {
+            '.': fieldsToRemove,
+        },
     }
 }
 

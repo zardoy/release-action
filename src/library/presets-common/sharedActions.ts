@@ -1,7 +1,7 @@
 import { endGroup, startGroup } from '@actions/core'
 import { Octokit, RestEndpointMethodTypes } from '@octokit/rest'
 import { defaultsDeep } from 'lodash'
-import { PackageJson } from 'type-fest'
+import { PackageJson, PartialDeep } from 'type-fest'
 import { readPackageJsonFile, writePackageJsonFile } from 'typed-jsonfile'
 import { GlobalPreset } from '../config'
 import { readRootPackageJson } from '../util'
@@ -29,7 +29,7 @@ export type SharedActions = {
     updateDescription: 'always' | 'ifEmpty' | false
     updateKeywords: 'always' | 'ifEmpty' | false
     updateHomepage: false | GetHomepageLink
-    /** fields to generate in package.json */
+    /** fields to generate in root package.json */
     generateFields: Record<'repository', boolean>
 }
 type MaybePromise<T> = T | Promise<T>
@@ -49,7 +49,7 @@ const defaults: SharedActions = {
     },
 }
 
-const presetSpecificOverrides: Partial<Record<GlobalPreset, Partial<SharedActions>>> = {
+const presetSpecificOverrides: PartialDeep<Record<GlobalPreset, Partial<SharedActions>>> = {
     npm: {
         runBuild: true,
         updateHomepage({ homepage }, packageJson) {
@@ -105,10 +105,7 @@ export const runSharedActions = async (preset: GlobalPreset, octokit: Octokit, r
 
     if (actionsToRun.runTest) await runTestsIfAny()
 
-    for (const [field, enablement] of Object.entries(actionsToRun.generateFields)) {
-        if (!enablement) continue
-        if (field === 'repository') packageJson[field] = `https://github.com/${repo.owner}/${repo.repo}`
-    }
+    if (actionsToRun.generateFields.repository) packageJson.repository = `https://github.com/${repo.owner}/${repo.repo}`
 
     await writePackageJsonFile({ dir: '.' }, packageJson)
 

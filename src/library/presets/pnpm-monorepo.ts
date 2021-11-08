@@ -6,27 +6,26 @@ import got from 'got'
 import execa from 'execa'
 import type { Options } from 'mdast-util-to-markdown'
 import remark from 'remark'
-import { PresetMain } from '../presets-common/type'
 import { endGroup, startGroup } from '@actions/core'
+import { OutputData, PresetMain } from '../presets-common/type'
+import { generateNpmPackageJsonFields } from '../presets-common/generatePackageJsonFields'
 
 export const main: PresetMain<'pnpm-monorepo'> = async ({ octokit, repo, presetConfig }) => {
     const mainPackage = presetConfig.mainPackage ?? repo.octokit.repo
+    const fieldsToRemovePerDir: OutputData['jsonFilesFieldsToRemove'] = {}
 
     const fromMonorepo = (...p: string[]) => join('packages', ...p)
     for (const monorepoPackage of await fs.promises.readdir(fromMonorepo())) {
         const fromPackage = (...p: string[]) => join('packages', monorepoPackage, ...p)
         if (!fs.existsSync(fromPackage('package.json'))) continue
-        const packageJson = await readPackageJsonFile({ dir: fromPackage() })
-        if (packageJson.private) continue
-        packageJson.repository = {
-            url: repo.url,
-            directory: fromPackage().replace(/\\/g, '/'),
-        } as any
-        await writePackageJsonFile({ dir: fromPackage() }, packageJson)
+        const { private: pkgPrivate } = await readPackageJsonFile({ dir: fromPackage() })
+        if (pkgPrivate) continue
+        const { packageJson, fieldsToRemove } = await generateNpmPackageJsonFields(fromPackage(), presetConfig, repo.url)
         // #region Quality Checks
         if (monorepoPackage !== packageJson.name)
-            throw new Error(`Package ${monorepoPackage} should have the same name in it's package.json (got ${packageJson.name})`)
+            throw new Error(`Package ${monorepoPackage} should have the same name in it's package.json (got ${packageJson.name!})`)
         // #endregion
+        fieldsToRemovePerDir[fromPackage()] = fieldsToRemove
         // is there any other method to detect that e.g. changes of current commit?
         const {
             body: { version: publishedVersion },
@@ -51,6 +50,10 @@ export const main: PresetMain<'pnpm-monorepo'> = async ({ octokit, repo, presetC
     startGroup('publish')
     await execa('pnpm', [...'publish --access public -r --no-git-checks --tag'.split(' '), presetConfig.publishTag], { stdio: 'inherit' })
     endGroup()
+
+    return {
+        jsonFilesFieldsToRemove: fieldsToRemovePerDir,
+    }
 }
 
 export const getLatestReleaseBody = async (changelogMarkdown: string) =>

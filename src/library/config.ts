@@ -50,6 +50,7 @@ const makePresetConfigs = <T extends Record<GlobalPreset, Record<string, any>>>(
 
 const npmSpecificConfig = {
     publishTag: 'latest',
+    minimumNodeVersion: '>=12.17' as string | null,
 }
 
 export const presetSpecificConfigDefaults = makePresetConfigs({

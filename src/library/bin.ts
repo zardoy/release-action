@@ -125,10 +125,8 @@ program
 
             if (result?.postRun) result.postRun(octokit, await readPackageJsonFile({ dir: '.' }))
 
-            const packageJsonFieldsRemove = [...(result?.packageJsonFieldsRemove ?? []), 'repository']
-            if (result?.packageJsonFieldsRemove) {
-                // TODO create pr with props removed
-            }
+            // TODO remove json files
+            // TODO! add fields from shared actions
         } catch (error_) {
             error(error_)
             process.exit(1)
