@@ -210,7 +210,7 @@ export const getNextVersionAndReleaseNotesFromTag = async ({
     // #endregion
 
     /** 1st group - type, 2nd - scope */
-    const conventionalRegex = /^(?:\S+\s)?(\w+)(\(\S+\))?:/
+    const conventionalRegex = /^(?:\S+\s)??(\w+)(\(\S+\))?:/
     // TODO config.linksToSameCommit
     // eslint-disable-next-line no-labels
     commit: for (const { message: commitMessage, sha: commitSha } of commitsBeforeTag) {

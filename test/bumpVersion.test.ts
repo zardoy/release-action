@@ -395,6 +395,35 @@ fix(types): allow to omit 2nd arg for \`readTsconfigJsonFile\`
     ).toMatchInlineSnapshot(``)
 })
 
+test('Extracts conventional commit info', async () => {
+    expect(
+        await getNextVersionAndReleaseNotes({
+            octokit: getMockedOctokit(
+                [{ name: 'v0.0.7', commit: { sha: '123' } }],
+                [
+                    "fix: TypeError: Cannot read property 'nextVersion' of undefined NPM Release",
+                    {
+                        message: 'feat: should not be here',
+                        sha: '123',
+                    },
+                ],
+            ),
+
+            ...args,
+        }),
+    ).toMatchInlineSnapshot(`
+    Object {
+      "bumpType": "patch",
+      "commitsByRule": Object {
+        "patch": Array [
+          "TypeError: Cannot read property 'nextVersion' of undefined NPM Release",
+        ],
+      },
+      "nextVersion": "0.0.8",
+    }
+  `)
+})
+
 // give better name to the test?
 test('Operates on description properly', async () => {
     const includeCommit = `
