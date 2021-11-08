@@ -95,7 +95,9 @@ program
                     octokit: repo,
                     url: `https://github.com/${repo.owner}/${repo.repo}`,
                 },
-                newVersion: versionBumpInfo!.nextVersion!,
+                // TODO
+                // eslint-disable-next-line zardoy-config/@typescript-eslint/no-non-null-asserted-optional-chain
+                newVersion: versionBumpInfo?.nextVersion!,
                 presetConfig,
                 versionBumpInfo: versionBumpInfo!,
             })
