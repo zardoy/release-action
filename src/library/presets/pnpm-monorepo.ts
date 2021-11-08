@@ -37,7 +37,9 @@ export const main: PresetMain<'pnpm-monorepo'> = async ({ octokit, repo, presetC
         }
 
         if (monorepoPackage === mainPackage) {
-            const latestReleaseBody = await getLatestReleaseBody(await fs.promises.readFile(fromPackage('CHANGELOG.MD'), 'utf-8'))
+            const latestReleaseBody = await getLatestReleaseBody(
+                await fs.promises.readFile(fs.existsSync(fromPackage('CHANGELOG.MD')) ? fromPackage('CHANGELOG.MD') : fromPackage('CHANGELOG.md'), 'utf-8'),
+            )
             await octokit.repos.createRelease({
                 ...repo.octokit,
                 tag_name: packageJson.version!,
