@@ -82,8 +82,6 @@ export const resolveSharedActions = (preset: GlobalPreset) => defaultsDeep(prese
 // eslint-disable-next-line complexity
 export const runSharedActions = async (preset: GlobalPreset, octokit: Octokit, repo: { repo: string; owner: string }, actionsToRun: SharedActions) => {
     const packageJson = await readRootPackageJson()
-    if (actionsToRun.runTest) await runTestsIfAny()
-
     if (actionsToRun.runBuild) {
         const { build: buildScript, prepublishOnly } = packageJson.scripts ?? {}
         if (actionsToRun.runBuild === 'enforce' && prepublishOnly) throw new Error(`Preset ${preset} can't have prepublishOnly script, use build instead`)
@@ -104,6 +102,8 @@ export const runSharedActions = async (preset: GlobalPreset, octokit: Octokit, r
             )
         }
     }
+
+    if (actionsToRun.runTest) await runTestsIfAny()
 
     for (const [field, enablement] of Object.entries(actionsToRun.generateFields)) {
         if (!enablement) continue
