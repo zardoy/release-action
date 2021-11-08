@@ -1,5 +1,6 @@
 import { SemverVersionString, versionBumpingStrategies } from './bumpVersion'
 import { notesGenerators } from './changelogGenerator'
+import { SharedActions } from './presets-common/sharedActions'
 
 // eslint-disable-next-line zardoy-config/@typescript-eslint/no-namespace
 namespace Plugin {
@@ -76,6 +77,8 @@ export interface Config {
         /** but when already was on NPM, but first tag */
         releaseNotesWithExisting: string
     }
+    /** advanced. use with careful */
+    sharedActionsOverride: Partial<SharedActions>
     bumpingVersionStrategy: 'none' | keyof typeof versionBumpingStrategies
     plugins: Record<string, Plugin.Plugin>
     /** Publish and generate changelog only when commit with [publish] in start is pushed (or custom regexp)
@@ -101,6 +104,7 @@ export const defaultConfig: Config = {
         releaseNotes: '🎉 Initial release',
         releaseNotesWithExisting: '🎉 First publish with automatic release tool',
     },
+    sharedActionsOverride: {},
     bumpingVersionStrategy: 'semverUnstable',
     plugins: builtinPlugins,
     changelog: {

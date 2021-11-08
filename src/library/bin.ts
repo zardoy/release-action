@@ -10,7 +10,7 @@ import { getNextVersionAndReleaseNotes } from './bumpVersion'
 import { generateChangelog } from './changelogGenerator'
 import { Config, defaultConfig, GlobalPreset, presetSpecificConfigDefaults, PresetSpecificConfigs } from './config'
 import { PresetExports } from './presets-common/type'
-import { resolveSharedActions, runSharedActions } from './presets-common/sharedActions'
+import { resolveSharedActions, runSharedActions, SharedActions } from './presets-common/sharedActions'
 
 const program = new Command()
 
@@ -32,7 +32,7 @@ program
             console.log('Using user config:', !!userConfig)
             console.log(config)
             endGroup()
-            const actionsToRun = resolveSharedActions(preset)
+            const actionsToRun = defaultsDeep(config.sharedActionsOverride, resolveSharedActions(preset)) as SharedActions
             startGroup('Shared actions for preset')
             console.log(actionsToRun)
             endGroup()

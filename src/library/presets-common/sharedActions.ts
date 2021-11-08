@@ -8,7 +8,7 @@ import { readRootPackageJson } from '../util'
 import { runTestsIfAny, safeExeca } from './execute'
 
 /** Opinionated and will be changed in future */
-type SharedActions = {
+export type SharedActions = {
     /**
      * if `true` preset won't run if there is no version bump, only shared actions
      * if `false`, preset must handle:
