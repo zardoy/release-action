@@ -7,6 +7,7 @@ import execa from 'execa'
 import type { Options } from 'mdast-util-to-markdown'
 import remark from 'remark'
 import { PresetMain } from '../presets-common/type'
+import { endGroup, startGroup } from '@actions/core'
 
 export const main: PresetMain<'pnpm-monorepo'> = async ({ octokit, repo, presetConfig }) => {
     const mainPackage = presetConfig.mainPackage ?? repo.octokit.repo
@@ -45,7 +46,9 @@ export const main: PresetMain<'pnpm-monorepo'> = async ({ octokit, repo, presetC
         }
     }
 
+    startGroup('publish')
     await execa('pnpm', [...'publish --access public -r --no-git-checks --tag'.split(' '), presetConfig.publishTag], { stdio: 'inherit' })
+    endGroup()
 }
 
 export const getLatestReleaseBody = async (changelogMarkdown: string) =>
