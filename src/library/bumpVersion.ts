@@ -4,6 +4,7 @@ import { inc as bumpVersion, major, ReleaseType, gt } from 'semver'
 import { readPackageJsonFile } from 'typed-jsonfile'
 import { Config } from './config'
 import { OctokitRepo } from './types'
+import { readRootPackageJson } from './util'
 
 export type SemverVersionString = `${number}.${number}.${number}` | `${number}.${number}.${number}-${string}`
 
@@ -122,7 +123,7 @@ export const getNextVersionAndReleaseNotes = async ({ octokit, repo, config }: B
     })
     const noTags = tags.length === 0
     if (noTags) {
-        const { version: currentVersion } = await readPackageJsonFile({ dir: '.' })
+        const { version: currentVersion } = await readRootPackageJson()
 
         if (!currentVersion!.startsWith('0.0.0'))
             return {

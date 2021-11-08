@@ -10,7 +10,7 @@ import { getNextVersionAndReleaseNotes } from './bumpVersion'
 import { generateChangelog } from './changelogGenerator'
 import { Config, defaultConfig, GlobalPreset, presetSpecificConfigDefaults, PresetSpecificConfigs } from './config'
 import { PresetExports } from './presets-common/type'
-import { runSharedActions } from './presets-common/sharedActions'
+import { resolveSharedActions, runSharedActions } from './presets-common/sharedActions'
 
 const program = new Command()
 
@@ -29,8 +29,12 @@ program
             const config = defaultsDeep(userConfig?.config || {}, defaultConfig) as Config
             config.preset = defaultsDeep(config.preset, presetSpecificConfigDefaults[preset])
             startGroup('Resolved config')
-            console.log('Using user config: ', !!userConfig)
+            console.log('Using user config:', !!userConfig)
             console.log(config)
+            endGroup()
+            const actionsToRun = resolveSharedActions(preset)
+            startGroup('Shared actions for preset')
+            console.log(actionsToRun)
             endGroup()
             const [owner, repoName] = process.env.GITHUB_REPOSITORY!.split('/')
             const repo = {
@@ -41,27 +45,30 @@ program
                 auth: process.env.GITHUB_TOKEN,
             })
 
-            const versionBumpInfo = await getNextVersionAndReleaseNotes({
-                octokit,
-                config: defaultConfig,
-                repo,
-            })
-            const { commitsByRule, nextVersion, bumpType } = versionBumpInfo
-            if (!nextVersion) return
-            const changelog = generateChangelog(
-                commitsByRule,
-                {
-                    bumpType,
-                    npmPackage: preset === 'npm' ? (await readPackageJsonFile({ dir: '.' })).name : undefined,
-                },
-                config,
-            )
-            await modifyPackageJsonFile(
-                { dir: '.' },
-                {
-                    version: nextVersion,
-                },
-            )
+            const versionBumpInfo = actionsToRun.bumpVersionAndGenerateChangelog
+                ? await getNextVersionAndReleaseNotes({
+                      octokit,
+                      config: defaultConfig,
+                      repo,
+                  })
+                : undefined
+            const changelog = versionBumpInfo
+                ? generateChangelog(
+                      versionBumpInfo.commitsByRule,
+                      {
+                          bumpType: versionBumpInfo.bumpType,
+                          npmPackage: preset === 'npm' ? (await readPackageJsonFile({ dir: '.' })).name : undefined,
+                      },
+                      config,
+                  )
+                : undefined
+            if (versionBumpInfo)
+                await modifyPackageJsonFile(
+                    { dir: '.' },
+                    {
+                        version: versionBumpInfo.nextVersion,
+                    },
+                )
 
             let presetToUse: PresetExports
             try {
@@ -71,7 +78,8 @@ program
                 throw new Error(`Incorrect preset ${preset}\n${error.message}`)
             }
 
-            await runSharedActions(preset, octokit, repo)
+            await runSharedActions(preset, octokit, repo, actionsToRun)
+            if (versionBumpInfo && !versionBumpInfo.nextVersion) return
 
             let presetConfig = config.preset
             if (options.vsixOnly)
@@ -87,29 +95,31 @@ program
                     octokit: repo,
                     url: `https://github.com/${repo.owner}/${repo.repo}`,
                 },
-                newVersion: nextVersion,
+                newVersion: versionBumpInfo!.nextVersion!,
                 presetConfig,
-                versionBumpInfo,
+                versionBumpInfo: versionBumpInfo!,
             })
 
-            const tagVersion = `v${nextVersion}`
-            const {
-                data: { id: release_id },
-            } = await octokit.repos.createRelease({
-                ...repo,
-                tag_name: tagVersion,
-                name: tagVersion,
-                body: changelog,
-            })
+            if (versionBumpInfo) {
+                const tagVersion = `v${versionBumpInfo.nextVersion!}`
+                const {
+                    data: { id: release_id },
+                } = await octokit.repos.createRelease({
+                    ...repo,
+                    tag_name: tagVersion,
+                    name: tagVersion,
+                    body: changelog,
+                })
 
-            if (result?.assets)
-                for (const { path, name } of result.assets)
-                    await octokit.repos.uploadReleaseAsset({
-                        ...repo,
-                        data: (await promises.readFile(path)) as any,
-                        name,
-                        release_id,
-                    })
+                if (result?.assets)
+                    for (const { path, name } of result.assets)
+                        await octokit.repos.uploadReleaseAsset({
+                            ...repo,
+                            data: (await promises.readFile(path)) as any,
+                            name,
+                            release_id,
+                        })
+            }
 
             if (result?.postRun) result.postRun(octokit, await readPackageJsonFile({ dir: '.' }))
 

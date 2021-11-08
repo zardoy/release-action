@@ -8,11 +8,12 @@ import { gt } from 'semver'
 import { PackageJson } from 'type-fest'
 import { readPackageJsonFile, readTsconfigJsonFile, writePackageJsonFile } from 'typed-jsonfile'
 import { PresetMain } from '../presets-common/type'
+import { readRootPackageJson } from '../util'
 
 // going to add more advanced functionality to provide better experience for forks
 
-export const main: PresetMain<'npm'> = async ({ repo, octokit, versionBumpInfo: { usingInExistingEnv } }) => {
-    const initialPackageJson = await readPackageJsonFile({ dir: '.' })
+export const main: PresetMain<'npm'> = async ({ presetConfig, versionBumpInfo: { usingInExistingEnv } }) => {
+    const initialPackageJson = await readRootPackageJson()
     const fieldsToRemove: string[] = []
     const generatedFields: Partial<PackageJson> = {
         files: ['build'],
@@ -50,7 +51,7 @@ export const main: PresetMain<'npm'> = async ({ repo, octokit, versionBumpInfo: 
     validatePaths(process.cwd(), await readPackageJsonFile({ dir: process.cwd() }))
 
     startGroup('publish')
-    await execa('pnpm', ['publish', '--access', 'public', '--no-git-checks', '--ignore-scripts'], { stdio: 'inherit' })
+    await execa('pnpm', ['publish', '--access', 'public', '--no-git-checks', '--ignore-scripts', '--tag', presetConfig.publishTag], { stdio: 'inherit' })
     endGroup()
 
     return {

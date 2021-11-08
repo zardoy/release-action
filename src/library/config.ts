@@ -43,9 +43,13 @@ export const builtinPlugins = makeBuiltintPlugins({
     },
 })
 
-export type GlobalPreset = 'node' | 'npm' | 'vscode-extension'
+export type GlobalPreset = 'node' | 'npm' | 'pnpm-monorepo' | 'vscode-extension'
 
 const makePresetConfigs = <T extends Record<GlobalPreset, Record<string, any>>>(t: T) => t
+
+const npmSpecificConfig = {
+    publishTag: 'latest',
+}
 
 export const presetSpecificConfigDefaults = makePresetConfigs({
     'vscode-extension': {
@@ -54,7 +58,13 @@ export const presetSpecificConfigDefaults = makePresetConfigs({
         attachVsix: false,
     },
     node: {},
-    npm: {},
+    npm: {
+        ...npmSpecificConfig,
+    },
+    'pnpm-monorepo': {
+        mainPackage: undefined as string | undefined,
+        ...npmSpecificConfig,
+    },
 })
 
 export type PresetSpecificConfigs = typeof presetSpecificConfigDefaults

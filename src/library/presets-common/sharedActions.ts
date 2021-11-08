@@ -4,10 +4,19 @@ import { defaultsDeep } from 'lodash'
 import { PackageJson } from 'type-fest'
 import { readPackageJsonFile, writePackageJsonFile } from 'typed-jsonfile'
 import { GlobalPreset } from '../config'
+import { readRootPackageJson } from '../util'
 import { runTestsIfAny, safeExeca } from './execute'
 
 /** Opinionated and will be changed in future */
 type SharedActions = {
+    /**
+     * if `true` preset won't run if there is no version bump, only shared actions
+     * if `false`, preset must handle:
+     * - next version for publishing
+     * - generating changelog
+     * - making GitHub release
+     *  */
+    bumpVersionAndGenerateChangelog: boolean
     // runs before build :/
     // skips if not found
     runTest: boolean
@@ -29,6 +38,7 @@ type RepositoryMetadata = RestEndpointMethodTypes['repos']['get']['response']['d
 type GetHomepageLink = (metadata: RepositoryMetadata, packageJson: PackageJson) => MaybePromise<string | false>
 
 const defaults: SharedActions = {
+    bumpVersionAndGenerateChangelog: true,
     runTest: true,
     runBuild: false,
     updateDescription: 'ifEmpty',
@@ -60,20 +70,23 @@ const presetSpecificOverrides: Partial<Record<GlobalPreset, Partial<SharedAction
             repository: false,
         },
     },
+    'pnpm-monorepo': {
+        bumpVersionAndGenerateChangelog: false,
+        updateDescription: false,
+        runBuild: 'enforce',
+    },
 }
 
-// eslint-disable-next-line complexity
-export const runSharedActions = async (preset: GlobalPreset, octokit: Octokit, repo: { repo: string; owner: string }) => {
-    const packageJson = await readPackageJsonFile({ dir: '.' })
-    const actionsConfig = defaultsDeep(presetSpecificOverrides[preset], defaults) as SharedActions
-    startGroup('Preset config for shared actions')
-    console.log(actionsConfig)
-    endGroup()
-    if (actionsConfig.runTest) await runTestsIfAny()
+export const resolveSharedActions = (preset: GlobalPreset) => defaultsDeep(presetSpecificOverrides[preset], defaults) as SharedActions
 
-    if (actionsConfig.runBuild) {
+// eslint-disable-next-line complexity
+export const runSharedActions = async (preset: GlobalPreset, octokit: Octokit, repo: { repo: string; owner: string }, actionsToRun: SharedActions) => {
+    const packageJson = await readRootPackageJson()
+    if (actionsToRun.runTest) await runTestsIfAny()
+
+    if (actionsToRun.runBuild) {
         const { build: buildScript, prepublishOnly } = packageJson.scripts ?? {}
-        if (actionsConfig.runBuild === 'enforce' && prepublishOnly) throw new Error(`Preset ${preset} can't have prepublishOnly script, use build instead`)
+        if (actionsToRun.runBuild === 'enforce' && prepublishOnly) throw new Error(`Preset ${preset} can't have prepublishOnly script, use build instead`)
 
         if (prepublishOnly) {
             startGroup('pnpm run prepublishOnly')
@@ -85,14 +98,14 @@ export const runSharedActions = async (preset: GlobalPreset, octokit: Octokit, r
             endGroup()
         } else {
             throw new Error(
-                actionsConfig.runBuild === 'enforce'
+                actionsToRun.runBuild === 'enforce'
                     ? `Preset ${preset} must have build script`
                     : 'Nothing to build, specify script first (prepublishOnly or build)',
             )
         }
     }
 
-    for (const [field, enablement] of Object.entries(actionsConfig.generateFields)) {
+    for (const [field, enablement] of Object.entries(actionsToRun.generateFields)) {
         if (!enablement) continue
         if (field === 'repository') packageJson[field] = `https://github.com/${repo.owner}/${repo.repo}`
     }
@@ -102,25 +115,26 @@ export const runSharedActions = async (preset: GlobalPreset, octokit: Octokit, r
     const repositoryMetadata = (await octokit.repos.get({ ...repo })).data
     const newMetadata: Partial<RestEndpointMethodTypes['repos']['update']['parameters']> = {}
 
-    if (actionsConfig.updateDescription && packageJson.description)
-        if (actionsConfig.updateDescription === 'ifEmpty') {
+    if (actionsToRun.updateDescription && packageJson.description)
+        if (actionsToRun.updateDescription === 'ifEmpty') {
             if (!repositoryMetadata.description) newMetadata.description = packageJson.description
         } else {
             newMetadata.description = packageJson.description
         }
 
-    if (actionsConfig.updateKeywords && packageJson.keywords)
-        if (actionsConfig.updateKeywords === 'ifEmpty') {
+    if (actionsToRun.updateKeywords && packageJson.keywords)
+        if (actionsToRun.updateKeywords === 'ifEmpty') {
             if (!repositoryMetadata.topics) newMetadata.topics = packageJson.keywords
         } else {
             newMetadata.topics = packageJson.keywords
         }
 
-    if (actionsConfig.updateHomepage) {
-        const newHomepage = await actionsConfig.updateHomepage(repositoryMetadata, packageJson)
+    if (actionsToRun.updateHomepage) {
+        const newHomepage = await actionsToRun.updateHomepage(repositoryMetadata, packageJson)
         if (newHomepage) newMetadata.homepage = newHomepage
     }
 
+    // TODO update metadata only after publishing
     if (Object.keys(newMetadata).length > 0)
         await octokit.repos.update({
             ...repo,
