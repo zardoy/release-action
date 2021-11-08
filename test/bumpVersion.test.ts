@@ -4,8 +4,13 @@ import typedJsonFile from 'typed-jsonfile'
 import { getNextVersionAndReleaseNotes } from '../src/library/bumpVersion'
 import { defaultConfig } from '../src/library/config'
 
+type Commit = {
+    message: string
+    sha?: string
+}
+
 // To its own files
-export const getMockedOctokit = (tags: { name: `v${string}`; commit: { sha: string } }[], commitsInput: ({ message: string; sha?: string } | string)[]) => {
+export const getMockedOctokit = (tags: { name: `v${string}`; commit: { sha: string } }[], commitsInput: (Commit | string)[]) => {
     const commits: { sha: string; commit: { message: string } }[] = commitsInput.map(data => {
         if (typeof data === 'string') return { commit: { message: data }, sha: '' }
         const { message, sha = '' } = data
@@ -28,6 +33,23 @@ const dummyRepo = { owner: 'user', repo: 'repository' }
 const args = {
     config: defaultConfig,
     repo: dummyRepo,
+}
+
+const getVersionBumpFromCommits = async (commits: Array<string | Commit>, version = 'v0.0.9') => {
+    return getNextVersionAndReleaseNotes({
+        octokit: getMockedOctokit(
+            [{ name: version as `v${string}`, commit: { sha: '123' } }],
+            [
+                ...commits,
+                {
+                    message: 'feat: should not be here',
+                    sha: '123',
+                },
+            ],
+        ),
+
+        ...args,
+    })
 }
 
 const mockPackageJsonOnce = (packageJson: Record<string, any>) => {
@@ -60,24 +82,13 @@ test('Initial release', async () => {
 
 test('Just bumps correctly', async () => {
     expect(
-        await getNextVersionAndReleaseNotes({
-            octokit: getMockedOctokit(
-                [{ name: 'v0.0.9', commit: { sha: '123' } }],
-                [
-                    'fix: fix serious issue\nfeat: add new feature',
-                    // TODO should be published only at this point
-                    '[publish] feat: just adding feature',
-                    // just ignored
-                    'WIP fix: first fixes',
-                    {
-                        message: 'feat: should not be here',
-                        sha: '123',
-                    },
-                ],
-            ),
-
-            ...args,
-        }),
+        await getVersionBumpFromCommits([
+            'fix: fix serious issue\nfeat: add new feature',
+            // TODO should be published only at this point
+            '[publish] feat: just adding feature',
+            // just ignored
+            'WIP fix: first fixes',
+        ]),
     ).toMatchInlineSnapshot(`
     Object {
       "bumpType": "patch",
@@ -98,20 +109,8 @@ test('Just bumps correctly', async () => {
 
 test('No version bump', async () => {
     expect(
-        await getNextVersionAndReleaseNotes({
-            octokit: getMockedOctokit(
-                [{ name: 'v0.0.9', commit: { sha: '123' } }],
-                [
-                    'fix serious issue\nfeature something new',
-                    {
-                        message: 'feat: should not be here',
-                        sha: '123',
-                    },
-                ],
-            ),
-
-            ...args,
-        }),
+        //
+        await getVersionBumpFromCommits(['fix serious issue\nfeature something new']),
     ).toMatchInlineSnapshot(`
     Object {
       "bumpType": "none",
@@ -123,22 +122,11 @@ test('No version bump', async () => {
 
 test('Just bumps correctly when stable', async () => {
     expect(
-        await getNextVersionAndReleaseNotes({
-            octokit: getMockedOctokit(
-                [{ name: 'v1.0.9', commit: { sha: '123' } }],
-                [
-                    'fix: fix serious issue\nfeat: add new feature',
-                    'feat: just adding feature',
-                    'fix: first fixes',
-                    {
-                        message: 'feat: should not be here',
-                        sha: '123',
-                    },
-                ],
-            ),
-
-            ...args,
-        }),
+        await getVersionBumpFromCommits(
+            //
+            ['fix: fix serious issue\nfeat: add new feature', 'feat: just adding feature', 'fix: first fixes'],
+            'v1.0.9',
+        ),
     ).toMatchInlineSnapshot(`
     Object {
       "bumpType": "minor",
@@ -159,29 +147,25 @@ test('Just bumps correctly when stable', async () => {
 
 test("Doesn't pick commits below version", async () => {
     expect(
-        await getNextVersionAndReleaseNotes({
-            octokit: getMockedOctokit(
-                [{ name: 'v1.0.9', commit: { sha: '123' } }],
-                [
-                    'fix: fix serious issue\nfeat: add new feature',
-                    'feat: just adding feature',
-                    'fix: first fixes',
-                    {
-                        message: 'feat: should not be here',
-                        sha: '123',
-                    },
+        await getVersionBumpFromCommits(
+            [
+                'fix: fix serious issue\nfeat: add new feature',
+                'feat: just adding feature',
+                'fix: first fixes',
+                {
+                    message: 'feat: should not be here',
+                    sha: '123',
+                },
 
-                    {
-                        message: 'feat: should not be here',
-                        sha: '3213',
-                    },
+                {
+                    message: 'feat: should not be here',
+                    sha: '3213',
+                },
 
-                    'feat: something else',
-                ],
-            ),
-
-            ...args,
-        }),
+                'feat: something else',
+            ],
+            'v1.0.9',
+        ),
     ).toMatchInlineSnapshot(`
     Object {
       "bumpType": "minor",
@@ -202,22 +186,14 @@ test("Doesn't pick commits below version", async () => {
 
 test('BREAKING gives major', async () => {
     expect(
-        await getNextVersionAndReleaseNotes({
-            octokit: getMockedOctokit(
-                [{ name: 'v1.0.9', commit: { sha: '123' } }],
-                [
-                    'fix: fix serious issue\nfeat: add new feature\nBREAKING config was removed',
-                    "feat: just adding feature\nBREAKING we broke anything\nfeat: but here we didn't break anything",
-                    'fix: first fixes',
-                    {
-                        message: 'feat: should not be here',
-                        sha: '123',
-                    },
-                ],
-            ),
-
-            ...args,
-        }),
+        await getVersionBumpFromCommits(
+            [
+                'fix: fix serious issue\nfeat: add new feature\nBREAKING config was removed',
+                "feat: just adding feature\nBREAKING we broke anything\nfeat: but here we didn't break anything",
+                'fix: first fixes',
+            ],
+            'v1.0.9',
+        ),
     ).toMatchInlineSnapshot(`
     Object {
       "bumpType": "major",
@@ -243,22 +219,14 @@ test('BREAKING gives major', async () => {
 
 test('BREAKING gives major on unstable', async () => {
     expect(
-        await getNextVersionAndReleaseNotes({
-            octokit: getMockedOctokit(
-                [{ name: 'v0.0.7', commit: { sha: '123' } }],
-                [
-                    'fix: fix serious issue\nfeat: add new feature\nBREAKING config was removed',
-                    'feat: just adding feature\nBREAKING we broke anything',
-                    'fix: first fixes',
-                    {
-                        message: 'feat: should not be here',
-                        sha: '123',
-                    },
-                ],
-            ),
-
-            ...args,
-        }),
+        await getVersionBumpFromCommits(
+            [
+                'fix: fix serious issue\nfeat: add new feature\nBREAKING config was removed',
+                'feat: just adding feature\nBREAKING we broke anything',
+                'fix: first fixes',
+            ],
+            'v0.0.7',
+        ),
     ).toMatchInlineSnapshot(`
     Object {
       "bumpType": "minor",
@@ -281,23 +249,15 @@ test('BREAKING gives major on unstable', async () => {
 
 test('Extracts scopes correctly', async () => {
     expect(
-        await getNextVersionAndReleaseNotes({
-            octokit: getMockedOctokit(
-                [{ name: 'v0.0.7', commit: { sha: '123' } }],
-                [
-                    'fix: fix serious issue\nfeat: add new feature\nBREAKING config was removed',
-                    'feat(button): just adding feature\nBREAKING we broke anything',
-                    "fix: some things\nfeat(button): we're insane!\nNote: yes, we are!\n",
-                    'fix(library-action): first fixes',
-                    {
-                        message: 'feat: should not be here',
-                        sha: '123',
-                    },
-                ],
-            ),
-
-            ...args,
-        }),
+        await getVersionBumpFromCommits(
+            [
+                'fix: fix serious issue\nfeat: add new feature\nBREAKING config was removed',
+                'feat(button): just adding feature\nBREAKING we broke anything',
+                "fix: some things\nfeat(button): we're insane!\nNote: yes, we are!\n",
+                'fix(library-action): first fixes',
+            ],
+            'v0.0.7',
+        ),
     ).toMatchInlineSnapshot(`
     Object {
       "bumpType": "minor",
@@ -324,30 +284,18 @@ test('Extracts scopes correctly', async () => {
 
 test("Extracts sha's correctly", async () => {
     expect(
-        await getNextVersionAndReleaseNotes({
-            octokit: getMockedOctokit(
-                [{ name: 'v0.0.7', commit: { sha: '123' } }],
-                [
-                    "fix: something fixed but we don't care",
-                    {
-                        message: 'fix: fix serious issue\nfeat: add new feature\nBREAKING config was removed',
-                        sha: '7f8468286354936e8817607d7a2087715bbe1854',
-                    },
+        await getVersionBumpFromCommits([
+            "fix: something fixed but we don't care",
+            {
+                message: 'fix: fix serious issue\nfeat: add new feature\nBREAKING config was removed',
+                sha: '7f8468286354936e8817607d7a2087715bbe1854',
+            },
 
-                    {
-                        message: 'fix: something was contributed (#123)',
-                        sha: '7f8468286354936e8817607d7a2087715bbe1854',
-                    },
-
-                    {
-                        message: 'feat: should not be here',
-                        sha: '123',
-                    },
-                ],
-            ),
-
-            ...args,
-        }),
+            {
+                message: 'fix: something was contributed (#123)',
+                sha: '7f8468286354936e8817607d7a2087715bbe1854',
+            },
+        ]),
     ).toMatchInlineSnapshot(`
     Object {
       "bumpType": "minor",
@@ -370,47 +318,28 @@ test("Extracts sha's correctly", async () => {
 // TODO
 test.skip('Strips empty lines', async () => {
     expect(
-        await getNextVersionAndReleaseNotes({
-            octokit: getMockedOctokit(
-                [{ name: 'v0.0.7', commit: { sha: '123' } }],
-                [
-                    {
-                        message: `feat: add support for reading jsonc files
+        await getVersionBumpFromCommits([
+            {
+                message: `feat: add support for reading jsonc files
 By default it's enabled when path ends with \`.jsonc\`
 feat: options must be object and not null or string
 BREAKING
 fix(types): allow to omit 2nd arg for \`readTsconfigJsonFile\`
 `,
-                        sha: '328',
-                    },
-                    {
-                        message: 'feat: should not be here',
-                        sha: '123',
-                    },
-                ],
-            ),
-
-            ...args,
-        }),
+                sha: '328',
+            },
+            {
+                message: 'feat: should not be here',
+                sha: '123',
+            },
+        ]),
     ).toMatchInlineSnapshot(``)
 })
 
 test('Extracts conventional commit info', async () => {
     expect(
-        await getNextVersionAndReleaseNotes({
-            octokit: getMockedOctokit(
-                [{ name: 'v0.0.7', commit: { sha: '123' } }],
-                [
-                    "fix: TypeError: Cannot read property 'nextVersion' of undefined NPM Release",
-                    {
-                        message: 'feat: should not be here',
-                        sha: '123',
-                    },
-                ],
-            ),
-
-            ...args,
-        }),
+        //
+        await getVersionBumpFromCommits(["fix: TypeError: Cannot read property 'nextVersion' of undefined NPM Release"]),
     ).toMatchInlineSnapshot(`
     Object {
       "bumpType": "patch",
@@ -419,7 +348,7 @@ test('Extracts conventional commit info', async () => {
           "TypeError: Cannot read property 'nextVersion' of undefined NPM Release",
         ],
       },
-      "nextVersion": "0.0.8",
+      "nextVersion": "0.0.10",
     }
   `)
 })
@@ -442,22 +371,8 @@ test: Fix tests
 Tests were hard to fix`
 
     expect(
-        await getNextVersionAndReleaseNotes({
-            octokit: getMockedOctokit(
-                [{ name: 'v1.0.9', commit: { sha: '123' } }],
-                [
-                    includeCommit,
-                    notIncludeCommit,
-                    'fix: first fixes',
-                    {
-                        message: 'feat: should not be here',
-                        sha: '123',
-                    },
-                ],
-            ),
-
-            ...args,
-        }),
+        //
+        await getVersionBumpFromCommits([includeCommit, notIncludeCommit, 'fix: first fixes'], 'v1.0.9'),
     ).toMatchInlineSnapshot(`
     Object {
       "bumpType": "minor",
