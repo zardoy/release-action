@@ -254,6 +254,8 @@ test('Extracts scopes correctly', async () => {
                 'fix: fix serious issue\nfeat: add new feature\nBREAKING config was removed',
                 'feat(button): just adding feature\nBREAKING we broke anything',
                 "fix: some things\nfeat(button): we're insane!\nNote: yes, we are!\n",
+                // IGNORED!
+                'fix(npm & pnpm preset): another fixes',
                 'fix(library-action): first fixes',
             ],
             'v0.0.7',
