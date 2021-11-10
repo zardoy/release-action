@@ -31,7 +31,13 @@ export const generateNpmPackageJsonFields = async (dir: string, npmConfig: NpmCo
         }
 
     // important default
-    const buildDir = (await readTsconfigJsonFile({ dir })).compilerOptions?.outDir ?? 'build'
+    let buildDir: string
+    try {
+        buildDir = (await readTsconfigJsonFile({ dir })).compilerOptions?.outDir ?? 'build'
+    } catch {
+        buildDir = 'build'
+    }
+
     if (existsSync(join(dir, 'src/bin.ts'))) generatedFields.bin = join(buildDir, 'bin.js')
     if (existsSync(join(dir, buildDir, 'index.d.ts'))) {
         generatedFields.main = join(buildDir, 'index.js')
