@@ -16,11 +16,13 @@ const program = new Command()
 
 type Options = {
     vsixOnly: boolean
+    forceUseVersion: boolean
 }
 
 program
     .argument('<preset>', 'Preset to use')
     .option('--vsix-only', 'vscode-extension preset: attach vsix to release instead of publishing', false)
+    .option('--force-use-version', 'Force pickup package.json version instead of resolving from commits')
     .action(async (preset: GlobalPreset, options: Options) => {
         try {
             if (!process.env.GITHUB_TOKEN) throw new Error('GITHUB_TOKEN is not defined. Make sure you pass it via env from GitHub action')
@@ -33,6 +35,7 @@ program
             console.log(config)
             endGroup()
             const actionsToRun = defaultsDeep(config.sharedActionsOverride, resolveSharedActions(preset)) as SharedActions
+            if (options.forceUseVersion) actionsToRun.bumpVersionAndGenerateChangelog = false
             startGroup('Shared actions for preset')
             console.log(actionsToRun)
             endGroup()
@@ -52,6 +55,7 @@ program
                       repo,
                   })
                 : undefined
+            if (versionBumpInfo?.usingInExistingEnv) console.log('No previous tool usage found. Enabling usingInExistingEnv mode')
             const changelog = versionBumpInfo
                 ? generateChangelog(
                       versionBumpInfo.commitsByRule,
@@ -79,8 +83,12 @@ program
             }
 
             await runSharedActions(preset, octokit, repo, actionsToRun)
-            if (versionBumpInfo && !versionBumpInfo.nextVersion) return
+            if (versionBumpInfo && !versionBumpInfo.nextVersion) {
+                console.warn('No next bumped version, skipping...')
+                return
+            }
 
+            console.log('Going with version', (await readPackageJsonFile({ dir: '.' })).version)
             let presetConfig = config.preset
             if (options.vsixOnly)
                 presetConfig = {
@@ -89,6 +97,7 @@ program
                     publishOvsx: false,
                 } as PresetSpecificConfigs['vscode-extension']
 
+            console.log('Running preset', preset)
             const result = await presetToUse.main({
                 octokit,
                 repo: {
