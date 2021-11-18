@@ -31,9 +31,10 @@ export const sharedMain = async ({ repo }: InputData<'vscode-extension'>) => {
     // if (hasCode) for (const file of copyFiles) await fs.promises.copyFile(file, join('out', file))
 
     // specify target
-    const readme = await fs.promises.readFile('README.MD', 'utf-8')
+    const readmeFilePath = ['README.md', 'README.MD', 'readme.md'].find(path => fs.existsSync(path))!
+    const readme = await fs.promises.readFile(readmeFilePath, 'utf-8')
     const newReadme = await markdownRemoveHeading(readme, 'Extension Development Notes')
-    await fs.promises.writeFile(hasCode ? 'out/README.MD' : 'README.MD', newReadme)
+    await fs.promises.writeFile(hasCode ? 'out/README.MD' : readmeFilePath, newReadme)
     const vsixPath = join(process.cwd(), 'output.vsix')
     await safeExeca('vsce', ['package', '--out', vsixPath], {
         cwd: hasCode ? join(process.cwd(), 'out') : '.',
