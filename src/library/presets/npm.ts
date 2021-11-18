@@ -3,13 +3,12 @@ import { join } from 'path'
 import { endGroup, startGroup } from '@actions/core'
 import execa from 'execa'
 import got from 'got'
-import { defaultsDeep } from 'lodash'
 import { gt } from 'semver'
 import { PackageJson } from 'type-fest'
-import { readPackageJsonFile, readTsconfigJsonFile, writePackageJsonFile } from 'typed-jsonfile'
+import { readPackageJsonFile } from 'typed-jsonfile'
+import { generateNpmPackageJsonFields } from '../presets-common/generatePackageJsonFields'
 import { PresetMain } from '../presets-common/type'
 import { readRootPackageJson } from '../util'
-import { generateNpmPackageJsonFields } from '../presets-common/generatePackageJsonFields'
 
 // going to add more advanced functionality to provide better experience for forks
 

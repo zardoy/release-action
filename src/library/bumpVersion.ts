@@ -114,6 +114,7 @@ export interface NextVersionReturn {
     /** No tags found, and package version doesn't start with 0.0.0 */
     usingInExistingEnv?: boolean
 }
+const logCi = (...msg: any) => process.env.CI && console.log(...msg)
 
 /** DEFAULT. wrapper to use latest tag is present */
 export const getNextVersionAndReleaseNotes = async ({ octokit, repo, config }: BumpVersionParams): Promise<NextVersionReturn> => {
@@ -161,6 +162,7 @@ export const getNextVersionAndReleaseNotesFromTag = async ({
     config,
 }: // addCommitLink = true,
 { tag: Record<'version' | 'commitSha', string> /* addCommitLink?: boolean */ } & BumpVersionParams): Promise<NextVersionReturn> => {
+    logCi('Found latest tag', tagVersion, 'on commit', tagCommitSha)
     let commits: Array<{ sha?: string; commit: { message: string } }> = []
     // #region Fetch commits before tag (exlusive)
     let commitsBeforeTag: Array<{ message: string; sha?: string }>

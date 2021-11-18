@@ -15,15 +15,10 @@ export const sharedMain = async ({ repo }: InputData<'vscode-extension'>) => {
     const hasCode = fs.existsSync('src/extension.ts')
     await execAsStep('pnpm', 'i -g vsce ovsx')
     await execAsStep('vsce', '-V')
-    if (!initialPackageJson.scripts?.build && hasCode) {
-        startGroup('vscode-framework build')
-        await safeExeca('pnpm', 'vscode-framework build')
-        endGroup()
-    } else if (initialPackageJson.scripts?.build) {
-        startGroup('pnpm run build')
-        await safeExeca('pnpm', 'run build')
-        endGroup()
-    }
+    if (hasCode && !fs.existsSync('src/generated.ts')) await execAsStep('pnpm', 'vscode-framework generate-types')
+
+    if (!initialPackageJson.scripts?.build && hasCode) await execAsStep('pnpm', 'vscode-framework build')
+    else if (initialPackageJson.scripts?.build) await execAsStep('pnpm', 'run build')
 
     // try to save extra size
     // const copyFiles = ['LICENSE']
@@ -43,7 +38,7 @@ export const sharedMain = async ({ repo }: InputData<'vscode-extension'>) => {
     await safeExeca('vsce', ['package', '--out', vsixPath], {
         cwd: hasCode ? join(process.cwd(), 'out') : '.',
     })
-    const SIZE_LIMIT = 3 * 1024 * 1024 // 3 MG
+    const SIZE_LIMIT = 3 * 1024 * 1024 // 3 MB
     if ((await fs.promises.stat(vsixPath)).size > SIZE_LIMIT) throw new Error('SIZE_LIMIT exceeded in 3 MG')
     return { vsixPath }
 }
