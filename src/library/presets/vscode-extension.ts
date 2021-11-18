@@ -7,6 +7,7 @@ import { safeExeca } from '../presets-common/execute'
 import { InputData, PresetMain } from '../presets-common/type'
 import { markdownRemoveHeading } from '../readmeUtils'
 import { execAsStep } from '../utils'
+import { trueCasePath } from 'true-case-path'
 // always pnpm is used in this preset
 
 /** shared main for vscode-extension* presets */
@@ -30,8 +31,7 @@ export const sharedMain = async ({ repo }: InputData<'vscode-extension'>) => {
     await fs.promises.writeFile(hasCode ? 'out/CHANGELOG.MD' : 'CHANGELOG.MD', CHANGELOG_CONTENT, 'utf-8')
     // if (hasCode) for (const file of copyFiles) await fs.promises.copyFile(file, join('out', file))
 
-    // specify target
-    const readmeFilePath = ['README.md', 'README.MD', 'readme.md'].find(path => fs.existsSync(path))!
+    const readmeFilePath = await trueCasePath('readme.md')
     const readme = await fs.promises.readFile(readmeFilePath, 'utf-8')
     const newReadme = await markdownRemoveHeading(readme, 'Extension Development Notes')
     await fs.promises.writeFile(hasCode ? 'out/README.MD' : readmeFilePath, newReadme)
@@ -40,7 +40,7 @@ export const sharedMain = async ({ repo }: InputData<'vscode-extension'>) => {
         cwd: hasCode ? join(process.cwd(), 'out') : '.',
     })
     const SIZE_LIMIT = 3 * 1024 * 1024 // 3 MB
-    if ((await fs.promises.stat(vsixPath)).size > SIZE_LIMIT) throw new Error('SIZE_LIMIT exceeded in 3 MG')
+    if ((await fs.promises.stat(vsixPath)).size > SIZE_LIMIT) throw new Error('SIZE_LIMIT exceeded in 3 MB')
     return { vsixPath }
 }
 

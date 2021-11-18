@@ -31,6 +31,7 @@ specifiers:
   prettier: ^2.4.1
   remark: '13'
   semver: ^7.3.5
+  true-case-path: ^2.2.1
   type-fest: ^2.5.2
   typed-jsonfile: ^0.2.0
   typescript: ^4.4.4
@@ -47,6 +48,7 @@ dependencies:
   modify-json-file: 1.2.1
   remark: 13.0.0
   semver: 7.3.5
+  true-case-path: 2.2.1
   typed-jsonfile: 0.2.0
 
 devDependencies:
@@ -5727,6 +5729,10 @@ packages:
 
   /trough/1.0.5:
     resolution: {integrity: sha512-rvuRbTarPXmMb79SmzEp8aqXNKcK+y0XaB298IXueQ8I2PsrATcPBCSPyK/dDNa2iWOhKlfNnOjdAOTBU/nkFA==}
+    dev: false
+
+  /true-case-path/2.2.1:
+    resolution: {integrity: sha512-0z3j8R7MCjy10kc/g+qg7Ln3alJTodw9aDuVWZa3uiWqfuBMKeAeP2ocWcxoyM3D73yz3Jt/Pu4qPr4wHSdB/Q==}
     dev: false
 
   /tsconfig-paths/3.11.0:

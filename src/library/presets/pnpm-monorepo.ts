@@ -9,6 +9,7 @@ import remark from 'remark'
 import { endGroup, startGroup } from '@actions/core'
 import { OutputData, PresetMain } from '../presets-common/type'
 import { generateNpmPackageJsonFields } from '../presets-common/generatePackageJsonFields'
+import { trueCasePath } from 'true-case-path'
 
 export const main: PresetMain<'pnpm-monorepo'> = async ({ octokit, repo, presetConfig }) => {
     const mainPackage = presetConfig.mainPackage ?? repo.octokit.repo
@@ -36,9 +37,8 @@ export const main: PresetMain<'pnpm-monorepo'> = async ({ octokit, repo, presetC
         }
 
         if (monorepoPackage === mainPackage) {
-            const latestReleaseBody = await getLatestReleaseBody(
-                await fs.promises.readFile(fs.existsSync(fromPackage('CHANGELOG.MD')) ? fromPackage('CHANGELOG.MD') : fromPackage('CHANGELOG.md'), 'utf-8'),
-            )
+            const changelogPath = await trueCasePath('CHANGELOG.MD', fromPackage())
+            const latestReleaseBody = await getLatestReleaseBody(await fs.promises.readFile(changelogPath, 'utf-8'))
             await octokit.repos.createRelease({
                 ...repo.octokit,
                 tag_name: packageJson.version!,
