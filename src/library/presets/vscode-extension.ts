@@ -1,13 +1,14 @@
 import fs from 'fs'
-import { join, posix } from 'path'
+import { join } from 'path'
 import { endGroup, startGroup } from '@actions/core'
 import execa from 'execa'
+import { trueCasePath } from 'true-case-path'
 import { readPackageJsonFile } from 'typed-jsonfile'
+import urlJoin from 'url-join'
 import { safeExeca } from '../presets-common/execute'
 import { InputData, PresetMain } from '../presets-common/type'
 import { markdownRemoveHeading } from '../readmeUtils'
 import { execAsStep } from '../utils'
-import { trueCasePath } from 'true-case-path'
 // always pnpm is used in this preset
 
 /** shared main for vscode-extension* presets */
@@ -21,15 +22,14 @@ export const sharedMain = async ({ repo }: InputData<'vscode-extension'>) => {
     if (!initialPackageJson.scripts?.build && hasCode) await execAsStep('pnpm', 'vscode-framework build')
     else if (initialPackageJson.scripts?.build) await execAsStep('pnpm', 'run build')
 
-    // try to save extra size
-    // const copyFiles = ['LICENSE']
+    const copyFiles = ['LICENSE']
 
-    const CHANGELOG_CONTENT = `# Changelog\nChangelog will go here in future releases. For now you can view [changelog at GitHub](${posix.join(
+    const CHANGELOG_CONTENT = `# Changelog\nChangelog will go here in future releases. For now you can view [changelog at GitHub](${urlJoin(
         repo.url,
         'releases',
     )})`
     await fs.promises.writeFile(hasCode ? 'out/CHANGELOG.MD' : 'CHANGELOG.MD', CHANGELOG_CONTENT, 'utf-8')
-    // if (hasCode) for (const file of copyFiles) await fs.promises.copyFile(file, join('out', file))
+    if (hasCode) for (const fileName of copyFiles) await fs.promises.copyFile(fileName, join('out', fileName))
 
     const readmeFilePath = await trueCasePath('readme.md')
     const readme = await fs.promises.readFile(readmeFilePath, 'utf-8')
@@ -47,17 +47,15 @@ export const sharedMain = async ({ repo }: InputData<'vscode-extension'>) => {
 export const main: PresetMain<'vscode-extension'> = async input => {
     const { vsixPath } = await sharedMain(input)
 
-    const { octokit, repo, presetConfig } = input
-    startGroup('publish')
+    const { presetConfig } = input
     if (presetConfig.publishMarketplace)
-        await execa('vsce', ['publish', '--packagePath', vsixPath], {
+        await execAsStep('vsce', ['publish', '--packagePath', vsixPath], {
             stdio: 'inherit',
         })
     if (presetConfig.publishOvsx)
-        await execa('ovsx', ['publish', '--packagePath', vsixPath], {
+        await execAsStep('ovsx', ['publish', vsixPath], {
             stdio: 'inherit',
         })
-    endGroup()
 
     if (presetConfig.attachVsix) {
         const packageJson = await readPackageJsonFile({ dir: '.' })

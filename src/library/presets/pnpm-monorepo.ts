@@ -7,9 +7,9 @@ import execa from 'execa'
 import type { Options } from 'mdast-util-to-markdown'
 import remark from 'remark'
 import { endGroup, startGroup } from '@actions/core'
+import { trueCasePath } from 'true-case-path'
 import { OutputData, PresetMain } from '../presets-common/type'
 import { generateNpmPackageJsonFields } from '../presets-common/generatePackageJsonFields'
-import { trueCasePath } from 'true-case-path'
 
 export const main: PresetMain<'pnpm-monorepo'> = async ({ octokit, repo, presetConfig }) => {
     const mainPackage = presetConfig.mainPackage ?? repo.octokit.repo
