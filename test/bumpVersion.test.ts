@@ -1,31 +1,12 @@
 /// <reference types="jest" />
-import { Octokit } from '@octokit/rest'
 import typedJsonFile from 'typed-jsonfile'
 import { getNextVersionAndReleaseNotes } from '../src/library/bumpVersion'
 import { defaultConfig } from '../src/library/config'
+import { getMockedOctokit } from './utils'
 
-type Commit = {
+export type Commit = {
     message: string
     sha?: string
-}
-
-// To its own files
-export const getMockedOctokit = (tags: { name: `v${string}`; commit: { sha: string } }[], commitsInput: (Commit | string)[]) => {
-    const commits: { sha: string; commit: { message: string } }[] = commitsInput.map(data => {
-        if (typeof data === 'string') return { commit: { message: data }, sha: '' }
-        const { message, sha = '' } = data
-        return { commit: { message }, sha }
-    })
-    return {
-        repos: {
-            async listTags() {
-                return { data: tags }
-            },
-            async listCommits() {
-                return { data: commits }
-            },
-        },
-    } as unknown as Octokit
 }
 
 const dummyRepo = { owner: 'user', repo: 'repository' }

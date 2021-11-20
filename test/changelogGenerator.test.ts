@@ -1,8 +1,8 @@
 /// <reference types="jest" />
 import { getNextVersionAndReleaseNotes } from '../src/library/bumpVersion'
 import { defaultConfig } from '../src/library/config'
-import { getMockedOctokit } from './bumpVersion.test'
 import { generateChangelog } from '../src/library/changelogGenerator'
+import { getMockedOctokit } from './utils'
 
 test('Generatees changelog', async () => {
     const result = await getNextVersionAndReleaseNotes({

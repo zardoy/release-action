@@ -1,8 +1,0 @@
-{
-    "name": "basic-fixture",
-    "version": "0.0.4-ignored",
-    "repository": "old-repo-not-updated",
-    "devDependencies": {
-        "typescript": "invalid"
-    }
-}
