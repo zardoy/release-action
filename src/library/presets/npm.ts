@@ -6,6 +6,7 @@ import got from 'got'
 import { gt } from 'semver'
 import { PackageJson } from 'type-fest'
 import { readPackageJsonFile } from 'typed-jsonfile'
+import globby from 'globby'
 import { generateNpmPackageJsonFields } from '../presets-common/generatePackageJsonFields'
 import { PresetMain } from '../presets-common/type'
 import { readRootPackageJson } from '../util'
@@ -26,7 +27,7 @@ export const main: PresetMain<'npm'> = async ({ presetConfig, versionBumpInfo: {
         if (!gt(packageJson.version!, latestVersionOnNpm)) throw new Error('When no tags found, version in package.json must be greater than that on NPM')
     }
 
-    validatePaths(process.cwd(), await readPackageJsonFile({ dir: process.cwd() }))
+    await validatePaths(process.cwd(), await readPackageJsonFile({ dir: process.cwd() }))
 
     startGroup('publish')
     await execa('pnpm', ['publish', '--access', 'public', '--no-git-checks', '--ignore-scripts', '--tag', presetConfig.publishTag], { stdio: 'inherit' })
@@ -39,9 +40,9 @@ export const main: PresetMain<'npm'> = async ({ presetConfig, versionBumpInfo: {
     }
 }
 
-const validatePaths = (cwd: string, json: PackageJson) => {
+const validatePaths = async (cwd: string, json: PackageJson) => {
     if (json.bin && typeof json.bin === 'string' && !existsSync(join(cwd, json.bin))) throw new Error('no bin!')
 
     // TODO isn't it already checked by npm?
-    for (const path of json.files!) if (!existsSync(join(cwd, path))) throw new Error('No build to publish')
+    for (const pattern of json.files!) if ((await globby(pattern, {})).length === 0) throw new Error('No build to publish')
 }
