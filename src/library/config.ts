@@ -51,7 +51,7 @@ const makePresetConfigs = <T extends Record<GlobalPreset, Record<string, any>>>(
 const npmSpecificConfig = {
     publishTag: 'latest',
     // esm https://gist.github.com/sindresorhus/a39789f98801d908bbc7ff3ecc99d99c#how-can-i-move-my-commonjs-project-to-esm
-    minimumNodeVersion: '"^12.20.0 || ^14.13.1 || >=16.0.0"' as string | null,
+    minimumNodeVersion: '^12.20.0 || ^14.13.1 || >=16.0.0' as string | null,
 }
 
 export const presetSpecificConfigDefaults = makePresetConfigs({
