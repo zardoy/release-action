@@ -39,7 +39,7 @@ export const main: PresetMain<'pnpm-monorepo'> = async ({ octokit, repo, presetC
         } catch {}
 
         if (monorepoPackage === mainPackage) {
-            const changelogPath: string | void = await trueCasePath('CHANGELOG.MD', fromPackage()).catch(() => {})
+            const changelogPath: string | void = await trueCasePath('CHANGELOG.MD', join(process.cwd(), fromPackage())).catch(() => {})
 
             if (changelogPath) {
                 const latestReleaseBody = await getLatestReleaseBody(await fs.promises.readFile(changelogPath, 'utf-8'))
