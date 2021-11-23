@@ -16,6 +16,7 @@ export const main: PresetMain<'pnpm-monorepo'> = async ({ octokit, repo, presetC
     const fieldsToRemovePerDir: OutputData['jsonFilesFieldsToRemove'] = {}
 
     const fromMonorepo = (...p: string[]) => join('packages', ...p)
+    let createRelease: { tag_name: string; body: string } | undefined
     for (const monorepoPackage of await fs.promises.readdir(fromMonorepo())) {
         const fromPackage = (...p: string[]) => join('packages', monorepoPackage, ...p)
         if (!fs.existsSync(fromPackage('package.json'))) continue
@@ -43,11 +44,10 @@ export const main: PresetMain<'pnpm-monorepo'> = async ({ octokit, repo, presetC
 
             if (changelogPath) {
                 const latestReleaseBody = await getLatestReleaseBody(await fs.promises.readFile(changelogPath, 'utf-8'))
-                await octokit.repos.createRelease({
-                    ...repo.octokit,
+                createRelease = {
                     tag_name: packageJson.version!,
                     body: `<!-- npm:${monorepoPackage} -->\n${latestReleaseBody}`,
-                })
+                }
             }
         }
     }
@@ -55,6 +55,12 @@ export const main: PresetMain<'pnpm-monorepo'> = async ({ octokit, repo, presetC
     startGroup('publish')
     await execa('pnpm', [...'publish --access public -r --no-git-checks --tag'.split(' '), presetConfig.publishTag], { stdio: 'inherit' })
     endGroup()
+
+    if (createRelease)
+        await octokit.repos.createRelease({
+            ...repo.octokit,
+            ...createRelease,
+        })
 
     return {
         jsonFilesFieldsToRemove: fieldsToRemovePerDir,
