@@ -28,22 +28,27 @@ export const main: PresetMain<'pnpm-monorepo'> = async ({ octokit, repo, presetC
         // #endregion
         fieldsToRemovePerDir[fromPackage()] = fieldsToRemove
         // is there any other method to detect that e.g. changes of current commit?
-        const {
-            body: { version: publishedVersion },
-        } = await got<PackageJson>(`https://cdn.jsdelivr.net/npm/${monorepoPackage}/package.json`, { responseType: 'json' })
-        if (packageJson.version === publishedVersion) {
-            console.log(`No version bump in ${monorepoPackage}, skipping`)
-            continue
-        }
+        try {
+            const {
+                body: { version: publishedVersion },
+            } = await got<PackageJson>(`https://cdn.jsdelivr.net/npm/${monorepoPackage}/package.json`, { responseType: 'json' })
+            if (packageJson.version === publishedVersion) {
+                console.log(`No version bump in ${monorepoPackage}, skipping`)
+                continue
+            }
+        } catch {}
 
         if (monorepoPackage === mainPackage) {
-            const changelogPath = await trueCasePath('CHANGELOG.MD', fromPackage())
-            const latestReleaseBody = await getLatestReleaseBody(await fs.promises.readFile(changelogPath, 'utf-8'))
-            await octokit.repos.createRelease({
-                ...repo.octokit,
-                tag_name: packageJson.version!,
-                body: `<!-- npm:${monorepoPackage} -->\n${latestReleaseBody}`,
-            })
+            const changelogPath: string | void = await trueCasePath('CHANGELOG.MD', fromPackage()).catch(() => {})
+
+            if (changelogPath) {
+                const latestReleaseBody = await getLatestReleaseBody(await fs.promises.readFile(changelogPath, 'utf-8'))
+                await octokit.repos.createRelease({
+                    ...repo.octokit,
+                    tag_name: packageJson.version!,
+                    body: `<!-- npm:${monorepoPackage} -->\n${latestReleaseBody}`,
+                })
+            }
         }
     }
 
