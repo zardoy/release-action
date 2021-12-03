@@ -17,7 +17,7 @@ export const sharedMain = async ({ repo }: InputData<'vscode-extension'>) => {
     const hasCode = fs.existsSync('src/extension.ts')
     await execAsStep('pnpm', 'i -g vsce ovsx')
     await execAsStep('vsce', '-V')
-    if (hasCode && !fs.existsSync('src/generated.ts')) await execAsStep('pnpm', 'vscode-framework generate-types')
+    if (hasCode && !fs.existsSync('src/generated.ts')) throw new Error('Missing generated types')
 
     if (!initialPackageJson.scripts?.build && hasCode) await execAsStep('pnpm', 'vscode-framework build')
     else if (initialPackageJson.scripts?.build) await execAsStep('pnpm', 'run build')
