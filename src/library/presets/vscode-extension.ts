@@ -9,6 +9,7 @@ import { safeExeca } from '../presets-common/execute'
 import { InputData, PresetMain } from '../presets-common/type'
 import { markdownRemoveHeading } from '../readmeUtils'
 import { execAsStep } from '../utils'
+
 // always pnpm is used in this preset
 
 /** shared main for vscode-extension* presets */
@@ -28,6 +29,10 @@ export const sharedMain = async ({ repo }: InputData<'vscode-extension'>) => {
         repo.url,
         'releases',
     )})`
+    if (initialPackageJson['web'] === true) {
+        const extWebContents = await fs.promises.readFile('out/extension-web.js', 'utf-8')
+        await fs.promises.writeFile('out/extension-web.js', extWebContents.split('\n').slice(73).join('\n'), 'utf-8')
+    }
     await fs.promises.writeFile(hasCode ? 'out/CHANGELOG.MD' : 'CHANGELOG.MD', CHANGELOG_CONTENT, 'utf-8')
     if (hasCode) for (const fileName of copyFiles) await fs.promises.copyFile(fileName, join('out', fileName))
 
