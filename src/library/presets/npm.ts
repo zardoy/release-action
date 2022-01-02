@@ -44,5 +44,7 @@ const validatePaths = async (cwd: string, json: PackageJson) => {
     if (json.bin && typeof json.bin === 'string' && !existsSync(join(cwd, json.bin))) throw new Error('no bin!')
 
     // TODO isn't it already checked by npm?
-    for (const pattern of json.files!) if ((await globby(pattern, {})).length === 0) throw new Error('No build to publish')
+    if(!existsSync('.npmignore'))
+        for (const pattern of json.files!) if ((await globby(pattern, {})).length === 0) throw new Error('No build to publish')
+
 }
