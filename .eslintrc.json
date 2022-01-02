@@ -1,6 +1,7 @@
 {
     "extends": "zardoy",
     "rules": {
-        "no-await-in-loop": "off"
+        "no-await-in-loop": "off",
+        "unicorn/no-await-expression-member": "off"
     }
 }
