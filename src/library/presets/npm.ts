@@ -13,7 +13,7 @@ import { readRootPackageJson } from '../util'
 
 // going to add more advanced functionality to provide better experience for forks
 
-export const main: PresetMain<'npm'> = async ({ presetConfig, versionBumpInfo: { usingInExistingEnv } }) => {
+export const main: PresetMain<'npm'> = async ({ presetConfig, versionBumpInfo: { usingInExistingEnv } = {} }) => {
     const initialPackageJson = await readRootPackageJson()
     if (initialPackageJson.private) throw new Error("Packages that are going to publish to NPM can't be private")
 

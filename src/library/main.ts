@@ -108,7 +108,7 @@ program
                 // eslint-disable-next-line zardoy-config/@typescript-eslint/no-non-null-asserted-optional-chain
                 newVersion: versionBumpInfo?.nextVersion!,
                 presetConfig,
-                versionBumpInfo: versionBumpInfo!,
+                versionBumpInfo: versionBumpInfo,
             })
 
             if (versionBumpInfo) {

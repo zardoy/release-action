@@ -12,7 +12,7 @@ export type InputData<T extends GlobalPreset> = {
     }
     octokit: Octokit
     newVersion: string
-    versionBumpInfo: NextVersionResult
+    versionBumpInfo: NextVersionResult | undefined
     presetConfig: PresetSpecificConfigs[T]
 }
 
