@@ -8,7 +8,7 @@ import urlJoin from 'url-join'
 import { safeExeca } from '../presets-common/execute'
 import { InputData, PresetMain } from '../presets-common/type'
 import { markdownRemoveHeading } from '../readmeUtils'
-import { execAsStep } from '../utils'
+import { execAsStep, installGlobalWithPnpm } from '../utils'
 
 // always pnpm is used in this preset
 
@@ -16,7 +16,7 @@ import { execAsStep } from '../utils'
 export const sharedMain = async ({ repo }: InputData<'vscode-extension'>) => {
     const initialPackageJson = await readPackageJsonFile({ dir: '.' })
     const hasCode = fs.existsSync('src/extension.ts')
-    await execAsStep('pnpm', 'i -g vsce ovsx')
+    await installGlobalWithPnpm(['vsce', 'ovsx'])
     await execAsStep('vsce', '-V')
     if (hasCode && !fs.existsSync('src/generated.ts')) throw new Error('Missing generated types')
 
