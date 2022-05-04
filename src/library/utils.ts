@@ -26,12 +26,12 @@ export const getPmVersion = async (pm: 'pnpm') => {
 
 export const installGlobalWithPnpm = async (packages: string[], asStep = true) => {
     const pnpmVersion = await getPmVersion('pnpm')
-    if (pnpmVersion!.split('.')[0]! === '7') {
+    if (pnpmVersion!.split('.')[0]! === '7')
         try {
             await execa('pnpm', ['root', '-g'])
         } catch {
             await execa('pnpm', ['setup'])
         }
-    }
+
     await (asStep ? execAsStep : execa)('pnpm', ['i', '-g', ...packages])
 }

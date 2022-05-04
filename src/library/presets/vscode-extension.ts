@@ -16,7 +16,8 @@ import { execAsStep, installGlobalWithPnpm } from '../utils'
 export const sharedMain = async ({ repo }: InputData<'vscode-extension'>) => {
     const initialPackageJson = await readPackageJsonFile({ dir: '.' })
     const hasCode = fs.existsSync('src/extension.ts')
-    await installGlobalWithPnpm(['vsce', 'ovsx'])
+    // await installGlobalWithPnpm(['vsce', 'ovsx'])
+    await execAsStep('npm', 'i -g vsce ovsx')
     await execAsStep('vsce', '-V')
     if (hasCode && !fs.existsSync('src/generated.ts')) throw new Error('Missing generated types')
 
