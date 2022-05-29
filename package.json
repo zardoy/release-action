@@ -7,7 +7,7 @@
     "license": "MIT",
     "scripts": {
         "build": "tsc",
-        "test": "jest test",
+        "test": "vitest --globals",
         "test-integration": "jest integration-test/monorepo-preset.test.ts"
     },
     "dependencies": {
@@ -34,7 +34,6 @@
         "@babel/preset-env": "^7.16.7",
         "@babel/preset-typescript": "^7.16.7",
         "@types/fs-extra": "^9.0.13",
-        "@types/jest": "^27.4.0",
         "@types/lodash": "^4.14.178",
         "@types/node": "^16.11.17",
         "@types/semantic-release": "^17.2.3",
@@ -48,10 +47,10 @@
         "eslint-config-zardoy": "^0.2.11",
         "fs-extra": "^10.0.0",
         "gitly": "^2.1.5",
-        "jest": "^27.4.5",
         "mdast-util-to-markdown": "^1.2.6",
         "prettier": "^2.5.1",
         "type-fest": "^2.8.0",
-        "typescript": "^4.5.4"
+        "typescript": "^4.5.4",
+        "vitest": "^0.13.0"
     }
 }

@@ -184,7 +184,7 @@ export const getNextVersionAndReleaseNotesFromTag = async ({
     /** But before strategy resolve */
     let resolvedBumpLevel = 0
     const releaseNotes: NextVersionReturn['commitsByRule'] = {}
-    const processCommitMessage = (message: string, sha?: string) => {
+    const processCommitMessage = (message: string, isForMarkdownFile: boolean, sha?: string) => {
         let prNumber: string | undefined
         const closesIssues = [] as number[]
         message = message
@@ -193,7 +193,7 @@ export const getNextVersionAndReleaseNotesFromTag = async ({
                 prNumber = num
                 return ''
             })
-            .replace(/(?:closes|fixes) #(\d+)/g, (_, num) => {
+            .replace(/(?:closes|fixes|resolves) #(\d+)/g, (_, num) => {
                 closesIssues.push(+num)
                 return ''
             })
@@ -206,7 +206,10 @@ export const getNextVersionAndReleaseNotesFromTag = async ({
         if (prNumber) message += ` (#${prNumber})`
         else if (closesIssues.length > 0) message += ` (${closesIssues.map(n => `#${n}`).join(', ')})`
 
-        if (sha && !prNumber && closesIssues.length === 0) message += ` [\`${sha.slice(0, 7)}\`](https://github.com/${repo.owner}/${repo.repo}/commit/${sha})`
+        if (sha && !prNumber && closesIssues.length === 0) {
+            const shaShort = sha.slice(0, 7)
+            message += isForMarkdownFile ? ` [\`${shaShort}\`](https://github.com/${repo.owner}/${repo.repo}/commit/${sha})` : ` \`${shaShort}\``
+        }
 
         return message.trim()
     }
@@ -290,7 +293,7 @@ export const getNextVersionAndReleaseNotesFromTag = async ({
         for (const { bumpLevel, notesRule, rawMessage, scope } of bumps) {
             if (!releaseNotes[notesRule]) releaseNotes[notesRule] = []
             // releaseNotes[notesRule]!.push({ message: processCommitMessage(rawMessage), scope })
-            const message = processCommitMessage(rawMessage, commitSha)
+            const message = processCommitMessage(rawMessage, false, commitSha)
             // commit sha undefined mostly on testing
             releaseNotes[notesRule]!.push(scope ? `**${scope.slice(1, -1)}**: ${message}` : message)
             if (bumpLevel < resolvedBumpLevel) continue

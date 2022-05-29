@@ -1,4 +1,4 @@
-/// <reference types="jest" />
+import type {} from 'vitest/globals'
 import typedJsonFile from 'typed-jsonfile'
 import { getNextVersionAndReleaseNotes } from '../src/library/bumpVersion'
 import { defaultConfig } from '../src/library/config'
@@ -34,7 +34,7 @@ const getVersionBumpFromCommits = async (commits: Array<string | Commit>, versio
 }
 
 const mockPackageJsonOnce = (packageJson: Record<string, any>) => {
-    const spy = jest.spyOn(typedJsonFile, 'readPackageJsonFile')
+    const spy = vi.spyOn(typedJsonFile, 'readPackageJsonFile')
     spy.mockResolvedValueOnce(JSON.parse(JSON.stringify(packageJson)))
 }
 
@@ -71,14 +71,14 @@ test('Just bumps correctly', async () => {
             'WIP fix: first fixes',
         ]),
     ).toMatchInlineSnapshot(`
-    Object {
+      {
       "bumpType": "patch",
-      "commitsByRule": Object {
-        "minor": Array [
+        "commitsByRule": {
+          "minor": [
           "add new feature",
           "just adding feature",
         ],
-        "patch": Array [
+          "patch": [
           "fix serious issue",
           "first fixes",
         ],
@@ -93,9 +93,9 @@ test('No version bump', async () => {
         //
         await getVersionBumpFromCommits(['fix serious issue\nfeature something new']),
     ).toMatchInlineSnapshot(`
-    Object {
+      {
       "bumpType": "none",
-      "commitsByRule": Object {},
+        "commitsByRule": {},
       "nextVersion": undefined,
     }
   `)
@@ -109,14 +109,14 @@ test('Just bumps correctly when stable', async () => {
             'v1.0.9',
         ),
     ).toMatchInlineSnapshot(`
-    Object {
+      {
       "bumpType": "minor",
-      "commitsByRule": Object {
-        "minor": Array [
+        "commitsByRule": {
+          "minor": [
           "add new feature",
           "just adding feature",
         ],
-        "patch": Array [
+          "patch": [
           "fix serious issue",
           "first fixes",
         ],
@@ -148,14 +148,14 @@ test("Doesn't pick commits below version", async () => {
             'v1.0.9',
         ),
     ).toMatchInlineSnapshot(`
-    Object {
+      {
       "bumpType": "minor",
-      "commitsByRule": Object {
-        "minor": Array [
+        "commitsByRule": {
+          "minor": [
           "add new feature",
           "just adding feature",
         ],
-        "patch": Array [
+          "patch": [
           "fix serious issue",
           "first fixes",
         ],
@@ -176,19 +176,19 @@ test('BREAKING gives major', async () => {
             'v1.0.9',
         ),
     ).toMatchInlineSnapshot(`
-    Object {
+      {
       "bumpType": "major",
-      "commitsByRule": Object {
-        "major": Array [
+        "commitsByRule": {
+          "major": [
           "add new feature
     config was removed",
           "just adding feature
     we broke anything",
         ],
-        "minor": Array [
+          "minor": [
           "but here we didn't break anything",
         ],
-        "patch": Array [
+          "patch": [
           "fix serious issue",
           "first fixes",
         ],
@@ -209,16 +209,16 @@ test('BREAKING gives major on unstable', async () => {
             'v0.0.7',
         ),
     ).toMatchInlineSnapshot(`
-    Object {
+      {
       "bumpType": "minor",
-      "commitsByRule": Object {
-        "major": Array [
+        "commitsByRule": {
+          "major": [
           "add new feature
     config was removed",
           "just adding feature
     we broke anything",
         ],
-        "patch": Array [
+          "patch": [
           "fix serious issue",
           "first fixes",
         ],
@@ -242,19 +242,19 @@ test('Extracts scopes correctly', async () => {
             'v0.0.7',
         ),
     ).toMatchInlineSnapshot(`
-    Object {
+      {
       "bumpType": "minor",
-      "commitsByRule": Object {
-        "major": Array [
+        "commitsByRule": {
+          "major": [
           "add new feature
     config was removed",
           "**button**: just adding feature
     we broke anything",
         ],
-        "minor": Array [
+          "minor": [
           "**button**: we're insane!",
         ],
-        "patch": Array [
+          "patch": [
           "fix serious issue",
           "some things",
           "**library-action**: first fixes",
@@ -280,16 +280,16 @@ test("Extracts sha's correctly", async () => {
             },
         ]),
     ).toMatchInlineSnapshot(`
-    Object {
+      {
       "bumpType": "minor",
-      "commitsByRule": Object {
-        "major": Array [
+        "commitsByRule": {
+          "major": [
           "add new feature
-    config was removed [\`7f84682\`](https://github.com/user/repository/commit/7f8468286354936e8817607d7a2087715bbe1854)",
+      config was removed \`7f84682\`",
         ],
-        "patch": Array [
+          "patch": [
           "something fixed but we don't care",
-          "fix serious issue [\`7f84682\`](https://github.com/user/repository/commit/7f8468286354936e8817607d7a2087715bbe1854)",
+            "fix serious issue \`7f84682\`",
           "something was contributed (#123)",
         ],
       },
@@ -324,10 +324,10 @@ test('Extracts conventional commit info', async () => {
         //
         await getVersionBumpFromCommits(["fix: TypeError: Cannot read property 'nextVersion' of undefined NPM Release"]),
     ).toMatchInlineSnapshot(`
-    Object {
+      {
       "bumpType": "patch",
-      "commitsByRule": Object {
-        "patch": Array [
+        "commitsByRule": {
+          "patch": [
           "TypeError: Cannot read property 'nextVersion' of undefined NPM Release",
         ],
       },
@@ -357,14 +357,14 @@ Tests were hard to fix`
         //
         await getVersionBumpFromCommits([includeCommit, notIncludeCommit, 'fix: first fixes'], 'v1.0.9'),
     ).toMatchInlineSnapshot(`
-    Object {
+      {
       "bumpType": "minor",
-      "commitsByRule": Object {
-        "minor": Array [
+        "commitsByRule": {
+          "minor": [
           "Add new feature within commit
     Description",
         ],
-        "patch": Array [
+          "patch": [
           "This rare bug was finally fixed
     Some background for bug goes here... (#33343)",
           "This rare bug was finally fixed
