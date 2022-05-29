@@ -1,5 +1,5 @@
 import type {} from 'vitest/globals'
-import typedJsonFile from 'typed-jsonfile'
+import * as typedJsonFile from 'typed-jsonfile'
 import { getNextVersionAndReleaseNotes } from '../src/library/bumpVersion'
 import { defaultConfig } from '../src/library/config'
 import { getMockedOctokit } from './utils'
@@ -40,6 +40,8 @@ const mockPackageJsonOnce = (packageJson: Record<string, any>) => {
 
 // TODO try to extract to fixtures for reuse
 
+vi.mock('typed-jsonfile')
+
 test('Initial release', async () => {
     mockPackageJsonOnce({
         private: true,
@@ -51,14 +53,14 @@ test('Initial release', async () => {
             ...args,
         }),
     ).toMatchInlineSnapshot(`
-    Object {
-      "bumpType": "none",
-      "commitsByRule": Object {
-        "rawOverride": "🎉 Initial release",
-      },
-      "nextVersion": "0.0.1",
-    }
-  `)
+      {
+        "bumpType": "none",
+        "commitsByRule": {
+          "rawOverride": "🎉 Initial release",
+        },
+        "nextVersion": "0.0.1",
+      }
+    `)
 })
 
 test('Just bumps correctly', async () => {
@@ -72,20 +74,20 @@ test('Just bumps correctly', async () => {
         ]),
     ).toMatchInlineSnapshot(`
       {
-      "bumpType": "patch",
+        "bumpType": "patch",
         "commitsByRule": {
           "minor": [
-          "add new feature",
-          "just adding feature",
-        ],
+            "add new feature",
+            "just adding feature",
+          ],
           "patch": [
-          "fix serious issue",
-          "first fixes",
-        ],
-      },
-      "nextVersion": "0.0.10",
-    }
-  `)
+            "fix serious issue",
+            "first fixes",
+          ],
+        },
+        "nextVersion": "0.0.10",
+      }
+    `)
 })
 
 test('No version bump', async () => {
@@ -94,11 +96,11 @@ test('No version bump', async () => {
         await getVersionBumpFromCommits(['fix serious issue\nfeature something new']),
     ).toMatchInlineSnapshot(`
       {
-      "bumpType": "none",
+        "bumpType": "none",
         "commitsByRule": {},
-      "nextVersion": undefined,
-    }
-  `)
+        "nextVersion": undefined,
+      }
+    `)
 })
 
 test('Just bumps correctly when stable', async () => {
@@ -110,20 +112,20 @@ test('Just bumps correctly when stable', async () => {
         ),
     ).toMatchInlineSnapshot(`
       {
-      "bumpType": "minor",
+        "bumpType": "minor",
         "commitsByRule": {
           "minor": [
-          "add new feature",
-          "just adding feature",
-        ],
+            "add new feature",
+            "just adding feature",
+          ],
           "patch": [
-          "fix serious issue",
-          "first fixes",
-        ],
-      },
-      "nextVersion": "1.1.0",
-    }
-  `)
+            "fix serious issue",
+            "first fixes",
+          ],
+        },
+        "nextVersion": "1.1.0",
+      }
+    `)
 })
 
 test("Doesn't pick commits below version", async () => {
@@ -149,20 +151,20 @@ test("Doesn't pick commits below version", async () => {
         ),
     ).toMatchInlineSnapshot(`
       {
-      "bumpType": "minor",
+        "bumpType": "minor",
         "commitsByRule": {
           "minor": [
-          "add new feature",
-          "just adding feature",
-        ],
+            "add new feature",
+            "just adding feature",
+          ],
           "patch": [
-          "fix serious issue",
-          "first fixes",
-        ],
-      },
-      "nextVersion": "1.1.0",
-    }
-  `)
+            "fix serious issue",
+            "first fixes",
+          ],
+        },
+        "nextVersion": "1.1.0",
+      }
+    `)
 })
 
 test('BREAKING gives major', async () => {
@@ -177,25 +179,25 @@ test('BREAKING gives major', async () => {
         ),
     ).toMatchInlineSnapshot(`
       {
-      "bumpType": "major",
+        "bumpType": "major",
         "commitsByRule": {
           "major": [
-          "add new feature
-    config was removed",
-          "just adding feature
-    we broke anything",
-        ],
+            "add new feature
+      config was removed",
+            "just adding feature
+      we broke anything",
+          ],
           "minor": [
-          "but here we didn't break anything",
-        ],
+            "but here we didn't break anything",
+          ],
           "patch": [
-          "fix serious issue",
-          "first fixes",
-        ],
-      },
-      "nextVersion": "2.0.0",
-    }
-  `)
+            "fix serious issue",
+            "first fixes",
+          ],
+        },
+        "nextVersion": "2.0.0",
+      }
+    `)
 })
 
 test('BREAKING gives major on unstable', async () => {
@@ -210,22 +212,22 @@ test('BREAKING gives major on unstable', async () => {
         ),
     ).toMatchInlineSnapshot(`
       {
-      "bumpType": "minor",
+        "bumpType": "minor",
         "commitsByRule": {
           "major": [
-          "add new feature
-    config was removed",
-          "just adding feature
-    we broke anything",
-        ],
+            "add new feature
+      config was removed",
+            "just adding feature
+      we broke anything",
+          ],
           "patch": [
-          "fix serious issue",
-          "first fixes",
-        ],
-      },
-      "nextVersion": "0.1.0",
-    }
-  `)
+            "fix serious issue",
+            "first fixes",
+          ],
+        },
+        "nextVersion": "0.1.0",
+      }
+    `)
 })
 
 test('Extracts scopes correctly', async () => {
@@ -243,26 +245,26 @@ test('Extracts scopes correctly', async () => {
         ),
     ).toMatchInlineSnapshot(`
       {
-      "bumpType": "minor",
+        "bumpType": "minor",
         "commitsByRule": {
           "major": [
-          "add new feature
-    config was removed",
-          "**button**: just adding feature
-    we broke anything",
-        ],
+            "add new feature
+      config was removed",
+            "**button**: just adding feature
+      we broke anything",
+          ],
           "minor": [
-          "**button**: we're insane!",
-        ],
+            "**button**: we're insane!",
+          ],
           "patch": [
-          "fix serious issue",
-          "some things",
-          "**library-action**: first fixes",
-        ],
-      },
-      "nextVersion": "0.1.0",
-    }
-  `)
+            "fix serious issue",
+            "some things",
+            "**library-action**: first fixes",
+          ],
+        },
+        "nextVersion": "0.1.0",
+      }
+    `)
 })
 
 test("Extracts sha's correctly", async () => {
@@ -281,21 +283,21 @@ test("Extracts sha's correctly", async () => {
         ]),
     ).toMatchInlineSnapshot(`
       {
-      "bumpType": "minor",
+        "bumpType": "minor",
         "commitsByRule": {
           "major": [
-          "add new feature
+            "add new feature
       config was removed \`7f84682\`",
-        ],
+          ],
           "patch": [
-          "something fixed but we don't care",
+            "something fixed but we don't care",
             "fix serious issue \`7f84682\`",
-          "something was contributed (#123)",
-        ],
-      },
-      "nextVersion": "0.1.0",
-    }
-  `)
+            "something was contributed (#123)",
+          ],
+        },
+        "nextVersion": "0.1.0",
+      }
+    `)
 })
 
 // TODO
@@ -325,15 +327,15 @@ test('Extracts conventional commit info', async () => {
         await getVersionBumpFromCommits(["fix: TypeError: Cannot read property 'nextVersion' of undefined NPM Release"]),
     ).toMatchInlineSnapshot(`
       {
-      "bumpType": "patch",
+        "bumpType": "patch",
         "commitsByRule": {
           "patch": [
-          "TypeError: Cannot read property 'nextVersion' of undefined NPM Release",
-        ],
-      },
-      "nextVersion": "0.0.10",
-    }
-  `)
+            "TypeError: Cannot read property 'nextVersion' of undefined NPM Release",
+          ],
+        },
+        "nextVersion": "0.0.10",
+      }
+    `)
 })
 
 // give better name to the test?
@@ -358,24 +360,24 @@ Tests were hard to fix`
         await getVersionBumpFromCommits([includeCommit, notIncludeCommit, 'fix: first fixes'], 'v1.0.9'),
     ).toMatchInlineSnapshot(`
       {
-      "bumpType": "minor",
+        "bumpType": "minor",
         "commitsByRule": {
           "minor": [
-          "Add new feature within commit
-    Description",
-        ],
+            "Add new feature within commit
+      Description",
+          ],
           "patch": [
-          "This rare bug was finally fixed
-    Some background for bug goes here... (#33343)",
-          "This rare bug was finally fixed
+            "This rare bug was finally fixed
+      Some background for bug goes here... (#33343)",
+            "This rare bug was finally fixed
 
-    Some background for bug goes here... (#33343, #453)",
-          "first fixes",
-        ],
-      },
-      "nextVersion": "1.1.0",
-    }
-  `)
+      Some background for bug goes here... (#33343, #453)",
+            "first fixes",
+          ],
+        },
+        "nextVersion": "1.1.0",
+      }
+    `)
 })
 
 test('Pick all commits even if they are > 100', async () => {
