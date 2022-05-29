@@ -51,7 +51,7 @@ program
             const versionBumpInfo = actionsToRun.bumpVersionAndGenerateChangelog
                 ? await getNextVersionAndReleaseNotes({
                       octokit,
-                      config: defaultConfig,
+                      config,
                       repo,
                   })
                 : undefined

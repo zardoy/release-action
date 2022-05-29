@@ -101,6 +101,7 @@ export interface Config {
     // notesOrder: 'asc-by-date' | 'desc-by-date'
 }
 
+// TODO: ban any usage
 export const defaultConfig: Config = {
     initialVersion: {
         version: '0.0.1',
