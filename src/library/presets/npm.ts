@@ -44,7 +44,7 @@ export const main: PresetMain<'npm'> = async ({ presetConfig, versionBumpInfo: {
 
 export const beforeSharedActions = async (config: Config) => {
     // TODO! use custom tsc instead of this method
-    if (config.cleanSource) await del(['src/**.{spec,test}.[jt]sx?'])
+    if (config.cleanSource) await del(['src/**.{spec,test}.[jt]s'])
 }
 
 const validatePaths = async (cwd: string, json: PackageJson) => {
