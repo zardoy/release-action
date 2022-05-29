@@ -83,6 +83,7 @@ export interface Config {
     sharedActionsOverride: Partial<SharedActions>
     bumpingVersionStrategy: 'none' | keyof typeof versionBumpingStrategies
     plugins: Record<string, Plugin.Plugin>
+    cleanSource: boolean
     /** Publish and generate changelog only when commit with [publish] in start is pushed (or custom regexp)
      * @default By default it would always publish
      */
@@ -106,6 +107,7 @@ export const defaultConfig: Config = {
         releaseNotes: '🎉 Initial release',
         releaseNotesWithExisting: '🎉 First publish with automatic release tool',
     },
+    cleanSource: false,
     sharedActionsOverride: {},
     bumpingVersionStrategy: 'semverUnstable',
     plugins: builtinPlugins,

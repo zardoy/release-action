@@ -3,7 +3,7 @@
 import { Octokit } from '@octokit/rest'
 import { PackageJson } from 'type-fest'
 import { NextVersionReturn as NextVersionResult } from '../bumpVersion'
-import { GlobalPreset, PresetSpecificConfigs } from '../config'
+import { Config, GlobalPreset, PresetSpecificConfigs } from '../config'
 
 export type InputData<T extends GlobalPreset> = {
     repo: {
@@ -26,4 +26,4 @@ export type OutputData = {
 
 export type PresetMain<T extends GlobalPreset> = (data: InputData<T>) => Promise<void | OutputData>
 
-export type PresetExports = { main: PresetMain<any> }
+export type PresetExports = { main: PresetMain<any>; beforeSharedActions?: (config: Config) => void | Promise<void> }

@@ -42,6 +42,11 @@ export const main: PresetMain<'npm'> = async ({ presetConfig, versionBumpInfo: {
     }
 }
 
+export const beforeSharedActions = async (config: Config) => {
+    // TODO! use custom tsc instead of this method
+    if (config.cleanSource) await del(['src/**.{spec,test}.[jt]sx?'])
+}
+
 const validatePaths = async (cwd: string, json: PackageJson) => {
     if (json.bin && typeof json.bin === 'string' && !existsSync(join(cwd, json.bin))) throw new Error('no bin!')
 

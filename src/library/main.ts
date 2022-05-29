@@ -82,6 +82,7 @@ program
                 throw new Error(`Incorrect preset ${preset}\n${error.message}`)
             }
 
+            await presetToUse.beforeSharedActions?.(config)
             await runSharedActions(preset, octokit, repo, actionsToRun)
             if (versionBumpInfo && !versionBumpInfo.nextVersion) {
                 console.warn('No next bumped version, skipping...')
