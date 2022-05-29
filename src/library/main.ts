@@ -76,7 +76,7 @@ program
 
             let presetToUse: PresetExports
             try {
-                // eslint-disable-next-line zardoy-config/@typescript-eslint/no-require-imports
+                // eslint-disable-next-line @typescript-eslint/no-require-imports
                 presetToUse = require(`./presets/${preset}`) as PresetExports
             } catch (error) {
                 throw new Error(`Incorrect preset ${preset}\n${error.message}`)
@@ -105,10 +105,10 @@ program
                     url: `https://github.com/${repo.owner}/${repo.repo}`,
                 },
                 // TODO
-                // eslint-disable-next-line zardoy-config/@typescript-eslint/no-non-null-asserted-optional-chain
+                // eslint-disable-next-line @typescript-eslint/no-non-null-asserted-optional-chain
                 newVersion: versionBumpInfo?.nextVersion!,
                 presetConfig,
-                versionBumpInfo: versionBumpInfo,
+                versionBumpInfo,
             })
 
             if (versionBumpInfo) {

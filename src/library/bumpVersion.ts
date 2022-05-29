@@ -166,6 +166,7 @@ export const getNextVersionAndReleaseNotesFromTag = async ({
     let commits: Array<{ sha?: string; commit: { message: string } }> = []
     // #region Fetch commits before tag (exlusive)
     let commitsBeforeTag: Array<{ message: string; sha?: string }>
+    // eslint-disable-next-line no-constant-condition
     for (let i = 1; true; i++) {
         const { data: justFetchedCommits } = await octokit.repos.listCommits({
             ...repo,
@@ -214,7 +215,7 @@ export const getNextVersionAndReleaseNotesFromTag = async ({
     /** 1st group - type, 2nd - scope */
     const conventionalRegex = /^(?:\S+\s)??(\w+)(\(\S+\))?:/
     // TODO config.linksToSameCommit
-    // eslint-disable-next-line no-labels
+
     commit: for (const { message: commitMessage, sha: commitSha } of commitsBeforeTag) {
         const bumps: Array<{ bumpLevel: number; notesRule: string; rawMessage: string; scope?: string }> = []
         /** if true, add message to last `bumps` */
@@ -233,7 +234,7 @@ export const getNextVersionAndReleaseNotesFromTag = async ({
                     const [, type] = conventionalRegex.exec(commitMessageLine) || []
                     conventionalRegex.lastIndex = 0
                     if (type !== versionRule.matches.conventionalType) continue
-                    // eslint-disable-next-line zardoy-config/unicorn/prefer-regexp-test, zardoy-config/@typescript-eslint/prefer-regexp-exec
+                    // eslint-disable-next-line unicorn/prefer-regexp-test, @typescript-eslint/prefer-regexp-exec
                 } else if (!commitMessageLine.match(versionRule.matches)) {
                     continue
                 }
@@ -300,9 +301,11 @@ export const getNextVersionAndReleaseNotesFromTag = async ({
     // TODO respect order config with l
     let nextVersion: undefined | string
     let bumpType = getBumpTypeByPriority(resolvedBumpLevel)
+    // eslint-disable-next-line no-empty
     if (bumpType === 'none' || config.bumpingVersionStrategy === 'none') {
     } else {
         const strategyConfig = versionBumpingStrategies[config.bumpingVersionStrategy]
+        // eslint-disable-next-line no-empty
         if (strategyConfig.isApplicable && !strategyConfig.isApplicable(tagVersion)) {
         } else {
             bumpType = strategyConfig[bumpType]

@@ -12,7 +12,7 @@ export const main = async (input: InputData<'vscode-extension'>): Promise<Output
     return {
         assets: [
             {
-                name: `${name!}-${version}.vsix`,
+                name: `${name}-${version}.vsix`,
                 path: vsixPath,
             },
         ],

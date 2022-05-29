@@ -1,6 +1,9 @@
 {
     "extends": "zardoy",
     "rules": {
+        "@typescript-eslint/naming-convention": "off",
+        "unicorn/filename-case": "off",
+        "@typescript-eslint/prefer-nullish-coalescing": "off",
         "no-await-in-loop": "off",
         "unicorn/no-await-expression-member": "off"
     }

@@ -2,7 +2,7 @@ import { SemverVersionString, versionBumpingStrategies } from './bumpVersion'
 import { notesGenerators } from './changelogGenerator'
 import { SharedActions } from './presets-common/sharedActions'
 
-// eslint-disable-next-line zardoy-config/@typescript-eslint/no-namespace
+// eslint-disable-next-line @typescript-eslint/no-namespace
 namespace Plugin {
     /** What specific plugin hook can override */
     export type Override = {

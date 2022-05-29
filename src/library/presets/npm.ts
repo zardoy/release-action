@@ -7,9 +7,11 @@ import { gt } from 'semver'
 import { PackageJson } from 'type-fest'
 import { readPackageJsonFile } from 'typed-jsonfile'
 import globby from 'globby'
+import del from 'del'
 import { generateNpmPackageJsonFields } from '../presets-common/generatePackageJsonFields'
 import { PresetMain } from '../presets-common/type'
 import { readRootPackageJson } from '../util'
+import { Config } from '../config'
 
 // going to add more advanced functionality to provide better experience for forks
 
@@ -44,7 +46,5 @@ const validatePaths = async (cwd: string, json: PackageJson) => {
     if (json.bin && typeof json.bin === 'string' && !existsSync(join(cwd, json.bin))) throw new Error('no bin!')
 
     // TODO isn't it already checked by npm?
-    if(!existsSync('.npmignore'))
-        for (const pattern of json.files!) if ((await globby(pattern, {})).length === 0) throw new Error('No build to publish')
-
+    if (!existsSync('.npmignore')) for (const pattern of json.files!) if ((await globby(pattern, {})).length === 0) throw new Error('No build to publish')
 }

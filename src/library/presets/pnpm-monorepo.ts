@@ -76,11 +76,11 @@ export const getLatestReleaseBody = async (changelogMarkdown: string) =>
             let headingBody = children.slice(firstHeading2Index + 1)
             const secondHeading2Index = headingBody.findIndex(node => node.type === 'heading' && node.depth === 2)
             if (secondHeading2Index > 0) headingBody = headingBody.slice(0, secondHeading2Index)
-            // @ts-expect-error
+            // @ts-expect-error ....
             rootNode.children = headingBody
             return rootNode
         })
-        // @ts-expect-error
+        // @ts-expect-error plugin setting
         .use({ settings: { bullet: '-' } as Options })
         .process(changelogMarkdown)
         .then(file => String(file))

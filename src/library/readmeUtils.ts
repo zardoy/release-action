@@ -1,3 +1,4 @@
+/* eslint-disable arrow-body-style */
 import { PackageJson, TsConfigJson } from 'type-fest'
 import { RepoInfo } from 'github-remote-info'
 import remark from 'remark'
@@ -9,7 +10,7 @@ const makePlaceholders = <T extends Record<string, PlaceholderCallback>>(placeho
 const placeholders = makePlaceholders({
     '[[paka-docs]]': ({ packageJson }) => {
         // TODO maybe text: Docs
-        return `[API](https://paka.dev/npm/${packageJson})`
+        return `[API](https://paka.dev/npm/${packageJson.name!})`
     },
 })
 
@@ -25,9 +26,8 @@ export const markdownRemoveHeading = async (markdown: string, headingToRemove: s
                     const headingText = node.children[0]!
                     return headingText.type === 'text' && headingText.value === headingToRemove
                 })
-                if (headingToRemoveIndex === -1) {
-                    return rootNode
-                }
+                if (headingToRemoveIndex === -1) return rootNode
+
                 children.splice(headingToRemoveIndex, 1)
                 for (let i = headingToRemoveIndex; i < children.length; i++) {
                     const node = children[i]!
@@ -35,6 +35,7 @@ export const markdownRemoveHeading = async (markdown: string, headingToRemove: s
                     children.splice(i, 1)
                     i--
                 }
+
                 return rootNode
             }
         })
