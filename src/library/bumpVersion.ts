@@ -206,10 +206,8 @@ export const getNextVersionAndReleaseNotesFromTag = async ({
         if (prNumber) message += ` (#${prNumber})`
         else if (closesIssues.length > 0) message += ` (${closesIssues.map(n => `#${n}`).join(', ')})`
 
-        if (sha && !prNumber && closesIssues.length === 0) {
-            const shaShort = sha.slice(0, 7)
-            message += isForMarkdownFile ? ` [\`${shaShort}\`](https://github.com/${repo.owner}/${repo.repo}/commit/${sha})` : ` \`${shaShort}\``
-        }
+        if (sha && !prNumber && closesIssues.length === 0)
+            message += isForMarkdownFile ? ` [\`${sha.slice(0, 7)}\`](https://github.com/${repo.owner}/${repo.repo}/commit/${sha})` : ` ${sha}`
 
         return message.trim()
     }
