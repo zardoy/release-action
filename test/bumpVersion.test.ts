@@ -287,11 +287,11 @@ test("Extracts sha's correctly", async () => {
         "commitsByRule": {
           "major": [
             "add new feature
-      config was removed \`7f84682\`",
+      config was removed 7f8468286354936e8817607d7a2087715bbe1854",
           ],
           "patch": [
             "something fixed but we don't care",
-            "fix serious issue \`7f84682\`",
+            "fix serious issue 7f8468286354936e8817607d7a2087715bbe1854",
             "something was contributed (#123)",
           ],
         },
