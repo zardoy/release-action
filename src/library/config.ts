@@ -59,6 +59,7 @@ export const presetSpecificConfigDefaults = makePresetConfigs({
         publishOvsx: true,
         publishMarketplace: true,
         attachVsix: false,
+        runTest: true,
     },
     node: {},
     npm: {

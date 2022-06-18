@@ -5,7 +5,7 @@ import execa from 'execa'
 import { trueCasePath } from 'true-case-path'
 import { readPackageJsonFile } from 'typed-jsonfile'
 import urlJoin from 'url-join'
-import { safeExeca } from '../presets-common/execute'
+import { runTestsIfAny, safeExeca } from '../presets-common/execute'
 import { InputData, PresetMain } from '../presets-common/type'
 import { markdownRemoveHeading } from '../readmeUtils'
 import { execAsStep, installGlobalWithPnpm } from '../utils'
@@ -13,7 +13,7 @@ import { execAsStep, installGlobalWithPnpm } from '../utils'
 // always pnpm is used in this preset
 
 /** shared main for vscode-extension* presets */
-export const sharedMain = async ({ repo }: InputData<'vscode-extension'>) => {
+export const sharedMain = async ({ repo, presetConfig }: InputData<'vscode-extension'>) => {
     const initialPackageJson = await readPackageJsonFile({ dir: '.' })
     const hasCode = fs.existsSync('src/extension.ts')
     // await installGlobalWithPnpm(['vsce', 'ovsx'])
@@ -23,6 +23,7 @@ export const sharedMain = async ({ repo }: InputData<'vscode-extension'>) => {
 
     if (!initialPackageJson.scripts?.build && hasCode) await execAsStep('pnpm', 'vscode-framework build')
     else if (initialPackageJson.scripts?.build) await execAsStep('pnpm', 'run build')
+    if (presetConfig.runTest) await runTestsIfAny()
 
     const copyFiles = ['LICENSE']
 

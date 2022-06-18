@@ -69,6 +69,7 @@ const presetSpecificOverrides: PartialDeep<Record<GlobalPreset, Partial<SharedAc
             // let vscode-framework handle it
             repository: false,
         },
+        runTest: false,
     },
     'pnpm-monorepo': {
         bumpVersionAndGenerateChangelog: false,
