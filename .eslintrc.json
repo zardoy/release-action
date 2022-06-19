@@ -5,6 +5,18 @@
         "unicorn/filename-case": "off",
         "@typescript-eslint/prefer-nullish-coalescing": "off",
         "no-await-in-loop": "off",
-        "unicorn/no-await-expression-member": "off"
+        "unicorn/no-await-expression-member": "off",
+        "@typescript-eslint/no-restricted-imports": [
+            "error",
+            {
+                "patterns": [
+                    {
+                        "group": ["vscode-framework/*"],
+                        "message": "Use importFromRepo instead",
+                        "allowTypeImports": true
+                    }
+                ]
+            }
+        ]
     }
 }
