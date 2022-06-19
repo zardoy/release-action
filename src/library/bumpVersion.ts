@@ -214,9 +214,10 @@ export const getNextVersionAndReleaseNotesFromTag = async ({
     // #endregion
 
     /** 1st group - type, 2nd - scope */
-    const conventionalRegex = /^(?:\S+\s)??(\w+)(\(\S+\))?:/
+    const conventionalRegex = /^(?:\[.+]\s)??(\w+)(\(\S+\))?:/
     // TODO config.linksToSameCommit
 
+    // eslint-disable-next-line no-labels
     commit: for (const { message: commitMessage, sha: commitSha } of commitsBeforeTag) {
         const bumps: Array<{ bumpLevel: number; notesRule: string; rawMessage: string; scope?: string }> = []
         /** if true, add message to last `bumps` */
@@ -241,6 +242,7 @@ export const getNextVersionAndReleaseNotesFromTag = async ({
                 }
 
                 // TODO cancel bumping of commitMessageLine, not whole commit
+                // eslint-disable-next-line no-labels
                 if (versionRule.bump === false) continue commit
                 const notesRule = versionRule.notesSection ?? versionRule.bump
                 const currentPriority = versionPriority[versionRule.bump]

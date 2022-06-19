@@ -69,6 +69,7 @@ test('Just bumps correctly', async () => {
             'fix: fix serious issue\nfeat: add new feature',
             // TODO should be published only at this point
             '[publish] feat: just adding feature',
+            '[skip ci] feat: just adding another feature (but making available on next commit)',
             // just ignored
             'WIP fix: first fixes',
         ]),
@@ -79,10 +80,10 @@ test('Just bumps correctly', async () => {
           "minor": [
             "add new feature",
             "just adding feature",
+            "just adding another feature (but making available on next commit)",
           ],
           "patch": [
             "fix serious issue",
-            "first fixes",
           ],
         },
         "nextVersion": "0.0.10",
