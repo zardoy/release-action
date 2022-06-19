@@ -5,6 +5,7 @@ import execa from 'execa'
 import { trueCasePath } from 'true-case-path'
 import { readPackageJsonFile } from 'typed-jsonfile'
 import urlJoin from 'url-join'
+import { runConfigurationGenerator } from 'vscode-framework/build/cli/configurationFromType'
 import { runTestsIfAny, safeExeca } from '../presets-common/execute'
 import { InputData, PresetMain } from '../presets-common/type'
 import { markdownRemoveHeading } from '../readmeUtils'
@@ -20,6 +21,7 @@ export const sharedMain = async ({ repo, presetConfig }: InputData<'vscode-exten
     await execAsStep('npm', 'i -g vsce ovsx')
     await execAsStep('vsce', '-V')
     if (hasCode && !fs.existsSync('src/generated.ts')) throw new Error('Missing generated types')
+    if (fs.existsSync('src/configurationType.ts') && !fs.existsSync('src/configurationTypeCache.jsonc')) await runConfigurationGenerator('')
 
     if (!initialPackageJson.scripts?.build && hasCode) await execAsStep('pnpm', 'vscode-framework build')
     else if (initialPackageJson.scripts?.build) await execAsStep('pnpm', 'run build')
