@@ -1,4 +1,3 @@
-import type {} from 'vitest/globals'
 import * as typedJsonFile from 'typed-jsonfile'
 import { getNextVersionAndReleaseNotes } from '../src/library/bumpVersion'
 import { defaultConfig } from '../src/library/config'

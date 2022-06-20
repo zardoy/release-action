@@ -1,15 +1,23 @@
 import fs from 'fs'
 import { join } from 'path'
+import { promisify } from 'util'
 import { endGroup, startGroup } from '@actions/core'
 import execa from 'execa'
 import { trueCasePath } from 'true-case-path'
 import { readPackageJsonFile } from 'typed-jsonfile'
 import urlJoin from 'url-join'
+import prettyBytes from 'pretty-bytes'
+import fastFolderSizeCb from 'fast-folder-size'
+import { Octokit } from '@octokit/rest'
 import { runTestsIfAny, safeExeca } from '../presets-common/execute'
 import { InputData, PresetMain } from '../presets-common/type'
 import { markdownRemoveHeading } from '../readmeUtils'
-import { execAsStep, installGlobalWithPnpm } from '../utils'
 import importFromRepo from '../presets-common/importFromRepo'
+import { execAsStep, installGlobalWithPnpm } from '../utils'
+import { OctokitRepoWithUrl } from '../types'
+import { extractChangelogFromGithub } from '../changelogFromGithub'
+
+const fastFolderSize = promisify(fastFolderSizeCb)
 
 // always pnpm is used in this preset
 
@@ -30,10 +38,6 @@ export const sharedMain = async ({ repo, presetConfig }: InputData<'vscode-exten
 
     const copyFiles = ['LICENSE']
 
-    const CHANGELOG_CONTENT = `# Changelog\nChangelog will go here in future releases. For now you can view [changelog at GitHub](${urlJoin(
-        repo.url,
-        'releases',
-    )})`
     // eslint-disable-next-line @typescript-eslint/dot-notation
     if (initialPackageJson['web'] === true) {
         const extWebContents = await fs.promises.readFile('out/extension-web.js', 'utf-8')
@@ -41,7 +45,12 @@ export const sharedMain = async ({ repo, presetConfig }: InputData<'vscode-exten
         await fs.promises.writeFile('out/extension-web.js', [extWebLines[0], ...extWebLines.slice(73)].join('\n'), 'utf-8')
     }
 
-    await fs.promises.writeFile(hasCode ? 'out/CHANGELOG.MD' : 'CHANGELOG.MD', CHANGELOG_CONTENT, 'utf-8')
+    const targetDir = hasCode ? join(process.cwd(), 'out') : '.'
+    await fs.promises.writeFile(
+        join(targetDir, 'CHANGELOG.MD'),
+        await generateChangelogContent({ ...repo, ...repo.octokit }, hasCode ? targetDir : undefined),
+        'utf-8',
+    )
     if (hasCode) for (const fileName of copyFiles) await fs.promises.copyFile(fileName, join('out', fileName))
 
     const readmeFilePath = await trueCasePath('readme.md').catch(() => undefined)
@@ -53,11 +62,24 @@ export const sharedMain = async ({ repo, presetConfig }: InputData<'vscode-exten
 
     const vsixPath = join(process.cwd(), 'output.vsix')
     await safeExeca('vsce', ['package', '--out', vsixPath], {
-        cwd: hasCode ? join(process.cwd(), 'out') : '.',
+        cwd: targetDir,
     })
     const SIZE_LIMIT = 3 * 1024 * 1024 // 3 MB
     if ((await fs.promises.stat(vsixPath)).size > SIZE_LIMIT) throw new Error('SIZE_LIMIT exceeded in 3 MB')
     return { vsixPath }
+}
+
+const generateChangelogContent = async (octokitWithRepo: OctokitRepoWithUrl, calculateSizeDirPath?: string): Promise<string> => {
+    const { totalCount, markdown } = await extractChangelogFromGithub(octokitWithRepo)
+    let metaInfo = `*releases*: ${totalCount}`
+    if (calculateSizeDirPath) {
+        const outDirSize = await fastFolderSize(calculateSizeDirPath)
+        if (!outDirSize) throw new Error(`Failed to calculate size of out dir: ${outDirSize!}`)
+        metaInfo += `, *current install size*: ${outDirSize}`
+    }
+
+    metaInfo += ' \n\n# Changelog\n'
+    return `${metaInfo}${markdown}`
 }
 
 export const main: PresetMain<'vscode-extension'> = async input => {

@@ -1,11 +1,9 @@
-/// <reference types="jest" />
-
 import { markdownRemoveHeading } from '../src/library/readmeUtils'
 
 test('Removes heading', async () => {
     expect(
-await markdownRemoveHeading(
-`
+        await markdownRemoveHeading(
+            `
 # Name
 
 > Introduction
@@ -20,9 +18,9 @@ Content...
 ## Continue to go
 ...
 `,
-'Test Remove ME')).
-
-toMatchInlineSnapshot(`
+            'Test Remove ME',
+        ),
+    ).toMatchInlineSnapshot(`
 "# Name
 
 > Introduction
