@@ -14,6 +14,7 @@ export type InputData<T extends GlobalPreset> = {
     newVersion: string
     versionBumpInfo: NextVersionResult | undefined
     presetConfig: PresetSpecificConfigs[T]
+    changelog?: string
 }
 
 export type OutputData = {

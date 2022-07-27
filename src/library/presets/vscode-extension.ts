@@ -15,14 +15,14 @@ import { markdownRemoveHeading } from '../readmeUtils'
 import importFromRepo from '../presets-common/importFromRepo'
 import { execAsStep, installGlobalWithPnpm } from '../utils'
 import { OctokitRepoWithUrl } from '../types'
-import { extractChangelogFromGithub } from '../changelogFromGithub'
+import { extractChangelogFromGithub, ReleasingChangelog } from '../changelogFromGithub'
 
 const fastFolderSize = promisify(fastFolderSizeCb)
 
 // always pnpm is used in this preset
 
 /** shared main for vscode-extension* presets */
-export const sharedMain = async ({ repo, presetConfig }: InputData<'vscode-extension'>) => {
+export const sharedMain = async ({ repo, presetConfig, changelog }: InputData<'vscode-extension'>) => {
     const initialPackageJson = await readPackageJsonFile({ dir: '.' })
     const hasCode = fs.existsSync('src/extension.ts')
     // await installGlobalWithPnpm(['vsce', 'ovsx'])
@@ -48,7 +48,7 @@ export const sharedMain = async ({ repo, presetConfig }: InputData<'vscode-exten
     const targetDir = hasCode ? join(process.cwd(), 'out') : '.'
     await fs.promises.writeFile(
         join(targetDir, 'CHANGELOG.MD'),
-        await generateChangelogContent({ ...repo, ...repo.octokit }, hasCode ? targetDir : undefined),
+        await generateChangelogContent({ ...repo, ...repo.octokit }, changelog!, hasCode ? targetDir : undefined),
         'utf-8',
     )
     if (hasCode) for (const fileName of copyFiles) await fs.promises.copyFile(fileName, join('out', fileName))
@@ -69,13 +69,14 @@ export const sharedMain = async ({ repo, presetConfig }: InputData<'vscode-exten
     return { vsixPath }
 }
 
-const generateChangelogContent = async (octokitWithRepo: OctokitRepoWithUrl, calculateSizeDirPath?: string): Promise<string> => {
-    const { totalCount, markdown } = await extractChangelogFromGithub(octokitWithRepo)
+const generateChangelogContent = async (octokitWithRepo: OctokitRepoWithUrl, changelog: string, calculateSizeDirPath?: string): Promise<string> => {
+    const packageJson = await readPackageJsonFile({ dir: '.' })
+    const { totalCount, markdown } = await extractChangelogFromGithub(octokitWithRepo, { changelog, version: packageJson.version! })
     let metaInfo = `*releases*: ${totalCount}`
     if (calculateSizeDirPath) {
         const outDirSize = await fastFolderSize(calculateSizeDirPath)
         if (!outDirSize) throw new Error(`Failed to calculate size of out dir: ${outDirSize!}`)
-        metaInfo += `, *current install size*: ${outDirSize}`
+        metaInfo += `, *current install size*: ${prettyBytes(outDirSize, { maximumFractionDigits: 1 })}`
     }
 
     metaInfo += ' \n\n# Changelog\n'

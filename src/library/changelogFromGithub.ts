@@ -8,7 +8,14 @@ interface Options {
     // lowerHeading?: false,
 }
 
-export const extractChangelogFromGithub = async (repo: OctokitRepoWithUrl, _options: Options = {}) => {
+export interface ReleasingChangelog {
+    version: string
+    changelog: string
+    /** Used for testing only */
+    date?: Date
+}
+
+export const extractChangelogFromGithub = async (repo: OctokitRepoWithUrl, releasingChangelog: ReleasingChangelog, _options: Options = {}) => {
     // eslint-disable-next-line arrow-body-style
     const replaceHashAndIssues = (input: string) => {
         return input
@@ -16,11 +23,18 @@ export const extractChangelogFromGithub = async (repo: OctokitRepoWithUrl, _opti
             .replace(/#(\d+)\b/g, (match, issueOrPrNum) => `[${match}](${repo.url}/issues/${issueOrPrNum}})`)
     }
 
+    const releasingTag = `v${releasingChangelog.version}`
+    const releasingRelease = {
+        createdAt: releasingChangelog.date || new Date(),
+        name: releasingTag,
+        tagName: releasingTag,
+        description: releasingChangelog.changelog,
+    }
     const { totalCount, releases } = await queryRepositoryReleases(repo)
     let markdown = ''
-    for (const { createdAt, name, tagName, description } of releases) {
+    for (const { createdAt, name, tagName, description } of [releasingRelease, ...releases]) {
         const dateFormatted = new Date(createdAt).toISOString().split('T')[0]!
-        markdown += `\n## [${name}](${urlJoin(repo.url, 'releases/tag', tagName)}) - ${dateFormatted}\n${replaceHashAndIssues(description)}`
+        markdown += `\n\n## [${name}](${urlJoin(repo.url, 'releases/tag', tagName)}) - ${dateFormatted}\n${replaceHashAndIssues(description)}`
     }
 
     if (totalCount > RELEASES_LIMIT)

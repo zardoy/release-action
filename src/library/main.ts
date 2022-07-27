@@ -110,6 +110,7 @@ program
                 newVersion: versionBumpInfo?.nextVersion!,
                 presetConfig,
                 versionBumpInfo,
+                changelog,
             })
 
             if (versionBumpInfo) {
