@@ -24,7 +24,7 @@
         "got": "^11.8.3",
         "lodash": "^4.17.21",
         "modify-json-file": "^1.2.2",
-        "pretty-bytes": "^6.0.0",
+        "pretty-bytes": "^5",
         "remark": "^13.0.0",
         "semver": "^7.3.5",
         "true-case-path": "^2.2.1",
@@ -64,5 +64,10 @@
         "vscode-framework": {
             "optional": true
         }
+    },
+    "pnpm": {
+        "ignorePeerDependencies": [
+            "vscode-framework"
+        ]
     }
 }
