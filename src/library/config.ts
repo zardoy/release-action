@@ -94,10 +94,11 @@ export interface Config {
     linksToSameCommit: boolean
     /** Changelog generator config */
     changelog: {
-        /** now affects only headings style */
+        /** for now affects only headings style */
         style: keyof typeof notesGenerators
     }
     preset: Partial<PresetSpecificConfigs[keyof PresetSpecificConfigs]>
+    githubPostaction: 'release' | 'tag' | false
     /** how to order notes by date of the commit. just reverses in case of `desc` */
     // notesOrder: 'asc-by-date' | 'desc-by-date'
 }
@@ -119,5 +120,6 @@ export const defaultConfig: Config = {
     // requirePublishKeyword: false,
     // notesOrder: 'asc-by-date',
     linksToSameCommit: true,
+    githubPostaction: 'release',
     preset: {},
 }

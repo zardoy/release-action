@@ -1,6 +1,7 @@
 import { Octokit } from '@octokit/rest'
 import got from 'got/dist/source'
 import { inc as bumpVersion, major, ReleaseType, gt } from 'semver'
+import { Except } from 'type-fest'
 import { readPackageJsonFile } from 'typed-jsonfile'
 import { Config } from './config'
 import { OctokitRepo } from './types'
@@ -99,6 +100,7 @@ type BumpVersionParams = {
     octokit: Octokit
     repo: OctokitRepo
     config: Config
+    autoUpdate: boolean
 }
 
 export interface NextVersionReturn {
@@ -113,11 +115,12 @@ export interface NextVersionReturn {
         | { rawOverride: string }
     /** No tags found, and package version doesn't start with 0.0.0 */
     usingInExistingEnv?: boolean
+    latestTagCommitSha?: string
 }
 const logCi = (...msg: any) => process.env.CI && console.log(...msg)
 
 /** DEFAULT. wrapper to use latest tag is present */
-export const getNextVersionAndReleaseNotes = async ({ octokit, repo, config }: BumpVersionParams): Promise<NextVersionReturn> => {
+export const getNextVersionAndReleaseNotes = async ({ octokit, repo, config, autoUpdate }: BumpVersionParams): Promise<NextVersionReturn> => {
     const { data: tags } = await octokit.repos.listTags({
         ...repo,
         per_page: 1,
@@ -142,15 +145,22 @@ export const getNextVersionAndReleaseNotes = async ({ octokit, repo, config }: B
     }
 
     const latestTag = tags[0]!
-    return getNextVersionAndReleaseNotesFromTag({
-        tag: {
-            version: latestTag.name.slice(1),
-            commitSha: latestTag.commit.sha,
-        },
-        octokit,
-        repo,
-        config,
-    })
+    const data: NextVersionReturn = autoUpdate
+        ? {
+              bumpType: 'patch',
+              nextVersion: bumpVersion(latestTag.name.slice(1), 'patch')!,
+              commitsByRule: {},
+          }
+        : await getNextVersionAndReleaseNotesFromTag({
+              tag: {
+                  version: latestTag.name.slice(1),
+                  commitSha: latestTag.commit.sha,
+              },
+              octokit,
+              repo,
+              config,
+          })
+    return { ...data, latestTagCommitSha: latestTag.commit.sha }
 }
 
 /** use with fetched tag */
@@ -161,7 +171,7 @@ export const getNextVersionAndReleaseNotesFromTag = async ({
     repo,
     config,
 }: // addCommitLink = true,
-{ tag: Record<'version' | 'commitSha', string> /* addCommitLink?: boolean */ } & BumpVersionParams): Promise<NextVersionReturn> => {
+{ tag: Record<'version' | 'commitSha', string> /* addCommitLink?: boolean */ } & Except<BumpVersionParams, 'autoUpdate'>): Promise<NextVersionReturn> => {
     logCi('Found latest tag', tagVersion, 'on commit', tagCommitSha)
     let commits: Array<{ sha?: string; commit: { message: string } }> = []
     // #region Fetch commits before tag (exlusive)
@@ -217,7 +227,6 @@ export const getNextVersionAndReleaseNotesFromTag = async ({
     const conventionalRegex = /^(?:\[.+]\s)??(\w+)(\(\S+\))?:/
     // TODO config.linksToSameCommit
 
-    // eslint-disable-next-line no-labels
     commit: for (const { message: commitMessage, sha: commitSha } of commitsBeforeTag) {
         const bumps: Array<{ bumpLevel: number; notesRule: string; rawMessage: string; scope?: string }> = []
         /** if true, add message to last `bumps` */
@@ -242,7 +251,6 @@ export const getNextVersionAndReleaseNotesFromTag = async ({
                 }
 
                 // TODO cancel bumping of commitMessageLine, not whole commit
-                // eslint-disable-next-line no-labels
                 if (versionRule.bump === false) continue commit
                 const notesRule = versionRule.notesSection ?? versionRule.bump
                 const currentPriority = versionPriority[versionRule.bump]

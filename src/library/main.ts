@@ -1,3 +1,4 @@
+/* eslint-disable max-depth */
 import { promises } from 'fs'
 import { Octokit } from '@octokit/rest'
 import { defaultsDeep } from 'lodash'
@@ -14,15 +15,18 @@ import { resolveSharedActions, runSharedActions, SharedActions } from './presets
 
 export const program = new Command()
 
-type Options = {
+type Options = Partial<{
     vsixOnly: boolean
     forceUseVersion: boolean
-}
+    autoUpdate: boolean
+}>
 
 program
     .argument('<preset>', 'Preset to use')
     .option('--vsix-only', 'vscode-extension preset: attach vsix to release instead of publishing', false)
-    .option('--force-use-version', 'Force pickup package.json version instead of resolving from commits')
+    .option('--force-use-version', 'Force use package.json version instead of resolving from commits history')
+    .option('--auto-update', 'Force bump patch version and create tag instead of release')
+    // eslint-disable-next-line complexity
     .action(async (preset: GlobalPreset, options: Options) => {
         try {
             if (!process.env.GITHUB_TOKEN) throw new Error('GITHUB_TOKEN is not defined. Make sure you pass it via env from GitHub action')
@@ -36,6 +40,7 @@ program
             endGroup()
             const actionsToRun = defaultsDeep(config.sharedActionsOverride, resolveSharedActions(preset)) as SharedActions
             if (options.forceUseVersion) actionsToRun.bumpVersionAndGenerateChangelog = false
+            if (options.autoUpdate) config.githubPostaction = 'tag'
             startGroup('Shared actions for preset')
             console.log(actionsToRun)
             endGroup()
@@ -53,6 +58,7 @@ program
                       octokit,
                       config,
                       repo,
+                      autoUpdate: options.autoUpdate ?? false,
                   })
                 : undefined
             if (versionBumpInfo?.usingInExistingEnv) console.log('No previous tool usage found. Enabling usingInExistingEnv mode')
@@ -114,24 +120,32 @@ program
             })
 
             if (versionBumpInfo) {
-                const tagVersion = `v${versionBumpInfo.nextVersion!}`
-                const {
-                    data: { id: release_id },
-                } = await octokit.repos.createRelease({
-                    ...repo,
-                    tag_name: tagVersion,
-                    name: tagVersion,
-                    body: changelog,
-                })
+                const tagName = `v${versionBumpInfo.nextVersion!}`
+                if (config.githubPostaction === 'release') {
+                    const {
+                        data: { id: release_id },
+                    } = await octokit.repos.createRelease({
+                        ...repo,
+                        tag_name: tagName,
+                        name: tagName,
+                        body: changelog,
+                    })
 
-                if (result?.assets)
-                    for (const { path, name } of result.assets)
-                        await octokit.repos.uploadReleaseAsset({
-                            ...repo,
-                            data: (await promises.readFile(path)) as any,
-                            name,
-                            release_id,
-                        })
+                    if (result?.assets)
+                        for (const { path, name } of result.assets)
+                            await octokit.repos.uploadReleaseAsset({
+                                ...repo,
+                                data: (await promises.readFile(path)) as any,
+                                name,
+                                release_id,
+                            })
+                } else if (config.githubPostaction === 'tag' && versionBumpInfo.latestTagCommitSha) {
+                    await octokit.git.createRef({
+                        ...repo,
+                        ref: `refs/tags/v${tagName}`,
+                        sha: versionBumpInfo.latestTagCommitSha,
+                    })
+                }
             }
 
             if (result?.postRun) result.postRun(octokit, await readPackageJsonFile({ dir: '.' }))

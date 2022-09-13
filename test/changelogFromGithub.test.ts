@@ -62,14 +62,14 @@ test('Generates advaned changelog', async () => {
       <!-- bump-type:patch -->
       ### Bug Fixes
 
-      - fix something cool ([#9](https://github.com/owner/test/issues/9}), [#10](https://github.com/owner/test/issues/10}))
+      - fix something cool ([#9](https://github.com/owner/test/issues/9), [#10](https://github.com/owner/test/issues/10))
       - another fix [\`919b378\`](https://github.com/some/repo/commit/919b378a3d01a3ff7ab1952c9ab792b84e0234be)
       - yes [\`919b378\`](https://github.com/owner/test/commit/919b378a3d01a3ff7ab1952c9ab792b84e0234be)
 
       ## [v0.0.1](https://github.com/owner/test/releases/tag/v0.0.1) - 2022-07-03
 
       ### New Features
-      - other lines ([#9](https://github.com/owner/test/issues/9}))
+      - other lines ([#9](https://github.com/owner/test/issues/9))
       - ### Introduce new snippet constrain! Meet **otherLines**!
       ",
         "totalCount": 2,

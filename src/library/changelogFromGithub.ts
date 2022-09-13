@@ -20,7 +20,7 @@ export const extractChangelogFromGithub = async (repo: OctokitRepoWithUrl, relea
     const replaceHashAndIssues = (input: string) => {
         return input
             .replace(/(?<= )[\da-f]{40}\b/g, sha => `[\`${sha.slice(0, 7)}\`](${repo.url}/commit/${sha})`)
-            .replace(/#(\d+)\b/g, (match, issueOrPrNum) => `[${match}](${repo.url}/issues/${issueOrPrNum}})`)
+            .replace(/#(\d+)\b/g, (match, issueOrPrNum) => `[${match}](${repo.url}/issues/${issueOrPrNum})`)
     }
 
     const releasingTag = `v${releasingChangelog.version}`
