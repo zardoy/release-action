@@ -1,4 +1,3 @@
-/// <reference types="jest" />
 import { getNextVersionAndReleaseNotes } from '../src/library/bumpVersion'
 import { defaultConfig } from '../src/library/config'
 import { generateChangelog } from '../src/library/changelogGenerator'

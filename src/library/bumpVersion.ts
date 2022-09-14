@@ -100,7 +100,7 @@ type BumpVersionParams = {
     octokit: Octokit
     repo: OctokitRepo
     config: Config
-    autoUpdate: boolean
+    autoUpdate?: boolean
 }
 
 export interface NextVersionReturn {
@@ -120,7 +120,7 @@ export interface NextVersionReturn {
 const logCi = (...msg: any) => process.env.CI && console.log(...msg)
 
 /** DEFAULT. wrapper to use latest tag is present */
-export const getNextVersionAndReleaseNotes = async ({ octokit, repo, config, autoUpdate }: BumpVersionParams): Promise<NextVersionReturn> => {
+export const getNextVersionAndReleaseNotes = async ({ octokit, repo, config, autoUpdate = false }: BumpVersionParams): Promise<NextVersionReturn> => {
     const { data: tags } = await octokit.repos.listTags({
         ...repo,
         per_page: 1,

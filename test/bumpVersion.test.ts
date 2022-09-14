@@ -16,7 +16,7 @@ const args = {
 }
 
 const getVersionBumpFromCommits = async (commits: Array<string | Commit>, version = 'v0.0.9') => {
-    return getNextVersionAndReleaseNotes({
+    const { latestTagCommitSha, ...data } = await getNextVersionAndReleaseNotes({
         octokit: getMockedOctokit(
             [{ name: version as `v${string}`, commit: { sha: '123' } }],
             [
@@ -30,6 +30,7 @@ const getVersionBumpFromCommits = async (commits: Array<string | Commit>, versio
 
         ...args,
     })
+    return data
 }
 
 const mockPackageJsonOnce = (packageJson: Record<string, any>) => {
