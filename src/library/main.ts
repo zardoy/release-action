@@ -142,7 +142,7 @@ program
                 } else if (config.githubPostaction === 'tag' && versionBumpInfo.latestTagCommitSha) {
                     await octokit.git.createRef({
                         ...repo,
-                        ref: `refs/tags/v${tagName}`,
+                        ref: `refs/tags/${tagName}`,
                         sha: versionBumpInfo.latestTagCommitSha,
                     })
                 }
