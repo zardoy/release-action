@@ -92,9 +92,14 @@ export const main: PresetMain<'vscode-extension'> = async input => {
             stdio: 'inherit',
         })
     if (presetConfig.publishOvsx)
-        await execAsStep('ovsx', ['publish', vsixPath], {
-            stdio: 'inherit',
-        })
+        try {
+            await execAsStep('ovsx', ['publish', vsixPath], {
+                stdio: 'inherit',
+            })
+        } catch (error) {
+            // don't care https://github.com/eclipse/openvsx/issues/539
+            if (!error.message?.includes?.('server responded with status 503')) throw error
+        }
 
     if (presetConfig.attachVsix) {
         const packageJson = await readPackageJsonFile({ dir: '.' })
