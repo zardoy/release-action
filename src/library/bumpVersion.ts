@@ -180,6 +180,7 @@ export const getNextVersionAndReleaseNotesFromTag = async ({
     for (let i = 1; true; i++) {
         const { data: justFetchedCommits } = await octokit.repos.listCommits({
             ...repo,
+            sha: process.env.GITHUB_REF?.replace(/^refs\/heads\//, '') || undefined,
             // i don't think it matters: 30 or 100
             per_page: 100,
             page: i,
