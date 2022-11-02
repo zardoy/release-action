@@ -21,7 +21,7 @@ export const main: PresetMain<'npm'> = async ({ presetConfig, versionBumpInfo: {
 
     const { packageJson, fieldsToRemove } = await generateNpmPackageJsonFields('.', presetConfig)
 
-    if (doPublish) return
+    if (!doPublish) return
     if (usingInExistingEnv) {
         // Tries to fetch latest version from npm. Thanks to fast jsdelivr
         const {
