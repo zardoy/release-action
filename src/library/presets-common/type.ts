@@ -14,6 +14,7 @@ export type InputData<T extends GlobalPreset> = {
     octokit: Octokit
     newVersion: string
     versionBumpInfo: NextVersionResult | undefined
+    preRelease: boolean
     presetConfig: PresetSpecificConfigs[T]
     changelog?: string
 }

@@ -11,7 +11,7 @@ import { getNextVersionAndReleaseNotes } from './bumpVersion'
 import { generateChangelog } from './changelogGenerator'
 import { Config, defaultConfig, GlobalPreset, presetSpecificConfigDefaults, PresetSpecificConfigs } from './config'
 import { PresetExports } from './presets-common/type'
-import { presetsPreleaseTagAdditionalPrefix, resolveSharedActions, runSharedActions, SharedActions } from './presets-common/sharedActions'
+import { presetsPreReleaseTagAdditionalPrefix, resolveSharedActions, runSharedActions, SharedActions } from './presets-common/sharedActions'
 
 export const program = new Command()
 
@@ -21,6 +21,7 @@ type Options = Partial<{
     autoUpdate: boolean
     skipScripts: boolean
     publishPrefix: string
+    preRelease: string
     tagPrefix: string
 }>
 
@@ -29,6 +30,7 @@ program
     .option('--vsix-only', 'vscode-extension preset: attach vsix to release instead of publishing', false)
     .option('--force-use-version', 'Force use package.json version instead of resolving from commits history')
     .option('--auto-update', 'Force bump patch version and create tag instead of release')
+    .option('--pre-release', 'Use pre release publishing')
     .option('--publish-prefix', 'Commit prefix required to publish e.g. [publish]')
     .option('--tag-prefix', 'Version tag prefix. Default is v')
     // eslint-disable-next-line complexity
@@ -59,9 +61,9 @@ program
                 auth: process.env.GITHUB_TOKEN,
             })
 
-            const prerelease = 'isPrelease' in config.preset && config.preset.isPrelease
+            const preRelease = (!!options.preRelease || ('isPreRelease' in config.preset && config.preset.isPreRelease)) ?? false
             const initialTagPrefix = options.tagPrefix ?? 'v'
-            const tagPrefix = prerelease ? `${initialTagPrefix}${presetsPreleaseTagAdditionalPrefix[preset]}` : initialTagPrefix
+            const tagPrefix = preRelease ? `${initialTagPrefix}${presetsPreReleaseTagAdditionalPrefix[preset]}` : initialTagPrefix
             let doPublish = true
             if (config.commitPublishPrefix) {
                 const { data } = await octokit.repos.getCommit({
@@ -138,6 +140,7 @@ program
                 versionBumpInfo,
                 changelog,
                 doPublish,
+                preRelease,
             })
 
             if (versionBumpInfo && doPublish) {
@@ -147,7 +150,7 @@ program
                         data: { id: release_id },
                     } = await octokit.repos.createRelease({
                         ...repo,
-                        prerelease,
+                        prerelease: preRelease,
                         tag_name: tagName,
                         name: tagName,
                         body: changelog,

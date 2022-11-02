@@ -49,7 +49,7 @@ export type GlobalPreset = 'node' | 'npm' | 'pnpm-monorepo' | 'vscode-extension'
 const makePresetConfigs = <T extends Record<GlobalPreset, Record<string, any>>>(t: T) => t
 
 const npmSpecificConfig = {
-    isPrelease: false,
+    isPreRelease: false,
     publishTag: 'latest',
     // esm https://gist.github.com/sindresorhus/a39789f98801d908bbc7ff3ecc99d99c#how-can-i-move-my-commonjs-project-to-esm
     minimumNodeVersion: '^12.20.0 || ^14.13.1 || >=16.0.0' as string | null,
@@ -59,7 +59,7 @@ export const presetSpecificConfigDefaults = makePresetConfigs({
     'vscode-extension': {
         publishOvsx: true,
         publishMarketplace: true,
-        isPrelease: false,
+        isPreRelease: false,
         attachVsix: false,
         runTest: true,
     },
