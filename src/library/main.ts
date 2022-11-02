@@ -36,6 +36,8 @@ program
     // eslint-disable-next-line complexity
     .action(async (preset: GlobalPreset, options: Options) => {
         try {
+            // eslint-disable-next-line @typescript-eslint/no-require-imports
+            console.log(`zardoy-release v${require('../package.json').version}`)
             if (!process.env.GITHUB_TOKEN) throw new Error('GITHUB_TOKEN is not defined. Make sure you pass it via env from GitHub action')
             if (!process.env.CI) throw new Error('This tool is intended to be run in GitHub action workflow')
             const userConfig = await cosmiconfig('release').search()
@@ -47,7 +49,11 @@ program
             endGroup()
             const actionsToRun = defaultsDeep(config.sharedActionsOverride, resolveSharedActions(preset)) as SharedActions
             if (options.forceUseVersion) actionsToRun.bumpVersionAndGenerateChangelog = false
-            if (options.autoUpdate) config.githubPostaction = 'tag'
+            if (options.autoUpdate) {
+                config.githubPostaction = 'tag'
+                console.log('Using options.autoUpdate')
+            }
+
             if (options.publishPrefix) config.commitPublishPrefix = options.publishPrefix
             startGroup('Shared actions for preset')
             console.log(actionsToRun)
