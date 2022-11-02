@@ -43,10 +43,6 @@ program
             const userConfig = await cosmiconfig('release').search()
             const config = defaultsDeep(userConfig?.config || {}, defaultConfig) as Config
             config.preset = defaultsDeep(config.preset, presetSpecificConfigDefaults[preset])
-            startGroup('Resolved config')
-            console.log('Using user config:', !!userConfig)
-            console.log(config)
-            endGroup()
             const actionsToRun = defaultsDeep(config.sharedActionsOverride, resolveSharedActions(preset)) as SharedActions
             if (options.forceUseVersion) actionsToRun.bumpVersionAndGenerateChangelog = false
             if (options.autoUpdate) {
@@ -55,6 +51,10 @@ program
             }
 
             if (options.publishPrefix) config.commitPublishPrefix = options.publishPrefix
+            startGroup('Resolved config')
+            console.log('Using user config:', !!userConfig)
+            console.log(config)
+            endGroup()
             startGroup('Shared actions for preset')
             console.log(actionsToRun)
             endGroup()
