@@ -139,3 +139,11 @@ export const runSharedActions = async (preset: GlobalPreset, octokit: Octokit, r
             ...newMetadata,
         })
 }
+
+// todo switch to postfix as most repos do
+export const presetsPreleaseTagAdditionalPrefix = {
+    npm: '-next',
+    'pnpm-monorepo': '-next',
+    'vscode-extension': '-prelease',
+    'vscode-extension-vsix': '-prelease',
+}

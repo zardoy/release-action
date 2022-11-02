@@ -24,7 +24,10 @@ const fastFolderSize = promisify(fastFolderSizeCb)
 /** shared main for vscode-extension* presets */
 export const sharedMain = async ({ repo, presetConfig, changelog }: InputData<'vscode-extension'>) => {
     const initialPackageJson = await readPackageJsonFile({ dir: '.' })
-    const hasCode = fs.existsSync('src/extension.ts')
+
+    const hasFramework = initialPackageJson.dependencies?.['vscode-framework'] || initialPackageJson.devDependencies?.['vscode-framework']
+
+    const hasCode = hasFramework && fs.existsSync('src/extension.ts')
     // await installGlobalWithPnpm(['vsce', 'ovsx'])
     await execAsStep('npm', 'i -g vsce ovsx')
     await execAsStep('vsce', '-V')
@@ -40,9 +43,10 @@ export const sharedMain = async ({ repo, presetConfig, changelog }: InputData<'v
 
     // eslint-disable-next-line @typescript-eslint/dot-notation
     if (initialPackageJson['web'] === true) {
-        const extWebContents = await fs.promises.readFile('out/extension-web.js', 'utf-8')
+        const toPatchFrameworkFile = 'out/extension-web.js'
+        const extWebContents = await fs.promises.readFile(toPatchFrameworkFile, 'utf-8')
         const extWebLines = extWebContents.split('\n')
-        await fs.promises.writeFile('out/extension-web.js', [extWebLines[0], ...extWebLines.slice(73)].join('\n'), 'utf-8')
+        await fs.promises.writeFile(toPatchFrameworkFile, [extWebLines[0], ...extWebLines.slice(73)].join('\n'), 'utf-8')
     }
 
     const targetDir = hasCode ? join(process.cwd(), 'out') : '.'
@@ -65,7 +69,7 @@ export const sharedMain = async ({ repo, presetConfig, changelog }: InputData<'v
         cwd: targetDir,
     })
     const SIZE_LIMIT = 3 * 1024 * 1024 // 3 MB
-    if ((await fs.promises.stat(vsixPath)).size > SIZE_LIMIT) throw new Error('SIZE_LIMIT exceeded in 3 MB')
+    if ((await fs.promises.stat(vsixPath)).size > SIZE_LIMIT) throw new Error('Publishing .vsix size limit exceeded in 3 MB')
     return { vsixPath }
 }
 
@@ -86,14 +90,19 @@ const generateChangelogContent = async (octokitWithRepo: OctokitRepoWithUrl, cha
 export const main: PresetMain<'vscode-extension'> = async input => {
     const { vsixPath } = await sharedMain(input)
 
+    if (!input.doPublish) return
+
     const { presetConfig } = input
+    const possiblyPreleaseOption = presetConfig.isPrelease ? ['--pre-release'] : []
+    // do this before first publishing to avoid problems with rerunning
+    if (presetConfig.publishOvsx && !process.env.OVSX_PAT) throw new Error('Either pass OVSX_PAT secret or disable publishing to ovsx')
     if (presetConfig.publishMarketplace)
-        await execAsStep('vsce', ['publish', '--packagePath', vsixPath], {
+        await execAsStep('vsce', ['publish', '--packagePath', '--no-dependencies', ...possiblyPreleaseOption, vsixPath], {
             stdio: 'inherit',
         })
     if (presetConfig.publishOvsx)
         try {
-            await execAsStep('ovsx', ['publish', vsixPath], {
+            await execAsStep('ovsx', ['publish', ...possiblyPreleaseOption, vsixPath], {
                 stdio: 'inherit',
             })
         } catch (error) {

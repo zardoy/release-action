@@ -11,7 +11,7 @@ import { getNextVersionAndReleaseNotes } from './bumpVersion'
 import { generateChangelog } from './changelogGenerator'
 import { Config, defaultConfig, GlobalPreset, presetSpecificConfigDefaults, PresetSpecificConfigs } from './config'
 import { PresetExports } from './presets-common/type'
-import { resolveSharedActions, runSharedActions, SharedActions } from './presets-common/sharedActions'
+import { presetsPreleaseTagAdditionalPrefix, resolveSharedActions, runSharedActions, SharedActions } from './presets-common/sharedActions'
 
 export const program = new Command()
 
@@ -19,6 +19,8 @@ type Options = Partial<{
     vsixOnly: boolean
     forceUseVersion: boolean
     autoUpdate: boolean
+    publishPrefix: string
+    tagPrefix: string
 }>
 
 program
@@ -26,6 +28,8 @@ program
     .option('--vsix-only', 'vscode-extension preset: attach vsix to release instead of publishing', false)
     .option('--force-use-version', 'Force use package.json version instead of resolving from commits history')
     .option('--auto-update', 'Force bump patch version and create tag instead of release')
+    .option('--publish-prefix', 'Commit prefix required to publish e.g. [publish]')
+    .option('--tag-prefix', 'Version tag prefix. Default is v')
     // eslint-disable-next-line complexity
     .action(async (preset: GlobalPreset, options: Options) => {
         try {
@@ -41,6 +45,7 @@ program
             const actionsToRun = defaultsDeep(config.sharedActionsOverride, resolveSharedActions(preset)) as SharedActions
             if (options.forceUseVersion) actionsToRun.bumpVersionAndGenerateChangelog = false
             if (options.autoUpdate) config.githubPostaction = 'tag'
+            if (options.publishPrefix) config.commitPublishPrefix = options.publishPrefix
             startGroup('Shared actions for preset')
             console.log(actionsToRun)
             endGroup()
@@ -53,12 +58,26 @@ program
                 auth: process.env.GITHUB_TOKEN,
             })
 
+            const prerelease = 'isPrelease' in config.preset && config.preset.isPrelease
+            const initialTagPrefix = options.tagPrefix ?? 'v'
+            const tagPrefix = prerelease ? `${initialTagPrefix}${presetsPreleaseTagAdditionalPrefix[preset]}` : initialTagPrefix
+            let doPublish = true
+            if (config.commitPublishPrefix) {
+                const { data } = await octokit.repos.getCommit({
+                    ...repo,
+                    ref: process.env.GITHUB_SHA!,
+                })
+                doPublish = data.commit.message.startsWith(config.commitPublishPrefix)
+            }
+
             const versionBumpInfo = actionsToRun.bumpVersionAndGenerateChangelog
                 ? await getNextVersionAndReleaseNotes({
                       octokit,
                       config,
                       repo,
                       autoUpdate: options.autoUpdate ?? false,
+                      tagPrefix,
+                      fallbackPrefix: initialTagPrefix,
                   })
                 : undefined
             if (versionBumpInfo?.usingInExistingEnv) console.log('No previous tool usage found. Enabling usingInExistingEnv mode')
@@ -91,11 +110,11 @@ program
             await presetToUse.beforeSharedActions?.(config)
             await runSharedActions(preset, octokit, repo, actionsToRun)
             if (versionBumpInfo && !versionBumpInfo.nextVersion) {
-                console.warn('No next bumped version, skipping...')
-                return
+                console.warn('No next bumped version, no publishing...')
+                doPublish = false
             }
 
-            console.log('Going with version', (await readPackageJsonFile({ dir: '.' })).version)
+            if (doPublish) console.log('Going to publish with version', (await readPackageJsonFile({ dir: '.' })).version)
             let presetConfig = config.preset
             if (options.vsixOnly)
                 presetConfig = {
@@ -117,15 +136,17 @@ program
                 presetConfig,
                 versionBumpInfo,
                 changelog,
+                doPublish,
             })
 
-            if (versionBumpInfo) {
-                const tagName = `v${versionBumpInfo.nextVersion!}`
+            if (versionBumpInfo && doPublish) {
+                const tagName = `${tagPrefix}${versionBumpInfo.nextVersion!}`
                 if (config.githubPostaction === 'release') {
                     const {
                         data: { id: release_id },
                     } = await octokit.repos.createRelease({
                         ...repo,
+                        prerelease,
                         tag_name: tagName,
                         name: tagName,
                         body: changelog,

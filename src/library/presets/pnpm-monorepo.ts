@@ -11,7 +11,7 @@ import { trueCasePath } from 'true-case-path'
 import { OutputData, PresetMain } from '../presets-common/type'
 import { generateNpmPackageJsonFields } from '../presets-common/generatePackageJsonFields'
 
-export const main: PresetMain<'pnpm-monorepo'> = async ({ octokit, repo, presetConfig }) => {
+export const main: PresetMain<'pnpm-monorepo'> = async ({ octokit, repo, presetConfig, doPublish }) => {
     const mainPackage = presetConfig.mainPackage ?? repo.octokit.repo
     const fieldsToRemovePerDir: OutputData['jsonFilesFieldsToRemove'] = {}
 
@@ -51,6 +51,8 @@ export const main: PresetMain<'pnpm-monorepo'> = async ({ octokit, repo, presetC
             }
         }
     }
+
+    if (!doPublish) return
 
     startGroup('publish')
     await execa('pnpm', [...'publish --access public -r --no-git-checks --tag'.split(' '), presetConfig.publishTag], { stdio: 'inherit' })

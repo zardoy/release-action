@@ -6,6 +6,7 @@ import { NextVersionReturn as NextVersionResult } from '../bumpVersion'
 import { Config, GlobalPreset, PresetSpecificConfigs } from '../config'
 
 export type InputData<T extends GlobalPreset> = {
+    doPublish: boolean
     repo: {
         url: string
         octokit: Record<'repo' | 'owner', string>

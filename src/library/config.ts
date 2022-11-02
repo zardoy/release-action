@@ -49,6 +49,7 @@ export type GlobalPreset = 'node' | 'npm' | 'pnpm-monorepo' | 'vscode-extension'
 const makePresetConfigs = <T extends Record<GlobalPreset, Record<string, any>>>(t: T) => t
 
 const npmSpecificConfig = {
+    isPrelease: false,
     publishTag: 'latest',
     // esm https://gist.github.com/sindresorhus/a39789f98801d908bbc7ff3ecc99d99c#how-can-i-move-my-commonjs-project-to-esm
     minimumNodeVersion: '^12.20.0 || ^14.13.1 || >=16.0.0' as string | null,
@@ -58,6 +59,7 @@ export const presetSpecificConfigDefaults = makePresetConfigs({
     'vscode-extension': {
         publishOvsx: true,
         publishMarketplace: true,
+        isPrelease: false,
         attachVsix: false,
         runTest: true,
     },
@@ -86,10 +88,9 @@ export interface Config {
     plugins: Record<string, Plugin.Plugin>
     cleanSource: boolean
     /** Publish and generate changelog only when commit with [publish] in start is pushed (or custom regexp)
-     * @default By default it would always publish
+     * @default false By default it would always publish
      */
-    // TODO
-    // requirePublishKeyword: boolean | RegExp
+    commitPublishPrefix: string | false
     // publishSkipKeyword
     linksToSameCommit: boolean
     /** Changelog generator config */
@@ -112,6 +113,7 @@ export const defaultConfig: Config = {
     },
     cleanSource: false,
     sharedActionsOverride: {},
+    commitPublishPrefix: false,
     bumpingVersionStrategy: 'semverUnstable',
     plugins: builtinPlugins,
     changelog: {

@@ -6,6 +6,7 @@ import { sharedMain } from './vscode-extension'
 
 export const main = async (input: InputData<'vscode-extension'>): Promise<OutputData> => {
     const { vsixPath } = await sharedMain(input)
+    if (!input.doPublish) return {}
     const { publisher, name, version } = (await readPackageJsonFile({
         dir: '.',
     })) as any
