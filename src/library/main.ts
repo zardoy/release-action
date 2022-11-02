@@ -19,6 +19,7 @@ type Options = Partial<{
     vsixOnly: boolean
     forceUseVersion: boolean
     autoUpdate: boolean
+    skipScripts: boolean
     publishPrefix: string
     tagPrefix: string
 }>

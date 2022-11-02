@@ -103,7 +103,7 @@ type BumpVersionParams = {
 }
 
 type GetNextVersionParams = BumpVersionParams & {
-    tagPrefix: string
+    tagPrefix?: string
     /** When in prerelease */
     fallbackPrefix?: string
     autoUpdate?: boolean
@@ -131,7 +131,7 @@ export const getNextVersionAndReleaseNotes = async ({
     repo,
     config,
     autoUpdate = false,
-    tagPrefix,
+    tagPrefix = 'v',
     fallbackPrefix,
 }: GetNextVersionParams): Promise<NextVersionReturn> => {
     const { data: tags } = await octokit.repos.listTags({
@@ -141,7 +141,7 @@ export const getNextVersionAndReleaseNotes = async ({
     let latestTag: { name: string; commit: { sha } } | undefined
     for (const _tag of tags) {
         const { name: tagName } = _tag
-        const satisfiesPrefix = (prefix: string) => tagName.startsWith(prefix) && !Number.isNaN(+tagName[prefix])
+        const satisfiesPrefix = (prefix: string) => tagName.startsWith(prefix) && !Number.isNaN(+tagName[prefix.length]!)
         // when in prerelease, try to pick latests regular version and only then prelease
         if (fallbackPrefix && satisfiesPrefix(fallbackPrefix)) {
             latestTag = _tag
