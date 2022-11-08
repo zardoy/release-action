@@ -97,12 +97,12 @@ export const main: PresetMain<'vscode-extension'> = async input => {
     // do this before first publishing to avoid problems with rerunning
     if (presetConfig.publishOvsx && !process.env.OVSX_PAT) throw new Error('Either pass OVSX_PAT secret or disable publishing to ovsx')
     if (presetConfig.publishMarketplace)
-        await execAsStep('vsce', ['publish', '--packagePath', '--no-dependencies', ...possiblyPreReleaseOption, vsixPath], {
+        await execAsStep('vsce', ['publish', '--packagePath', vsixPath, '--no-dependencies', ...possiblyPreReleaseOption], {
             stdio: 'inherit',
         })
     if (presetConfig.publishOvsx)
         try {
-            await execAsStep('ovsx', ['publish', ...possiblyPreReleaseOption, vsixPath], {
+            await execAsStep('ovsx', ['publish', vsixPath, ...possiblyPreReleaseOption], {
                 stdio: 'inherit',
             })
         } catch (error) {
