@@ -5,6 +5,7 @@ import { PackageJson, PartialDeep } from 'type-fest'
 import { writePackageJsonFile } from 'typed-jsonfile'
 import { GlobalPreset } from '../config'
 import { readRootPackageJson } from '../util'
+import { execPnpmScript } from '../utils'
 import { runTestsIfAny, safeExeca } from './execute'
 
 /** Opinionated and will be changed in future */
@@ -89,11 +90,11 @@ export const runSharedActions = async (preset: GlobalPreset, octokit: Octokit, r
 
         if (prepublishOnly) {
             startGroup('pnpm run prepublishOnly')
-            await safeExeca('pnpm', 'run prepublishOnly')
+            await execPnpmScript('run prepublishOnly')
             endGroup()
         } else if (buildScript) {
             startGroup('pnpm run build')
-            await safeExeca('pnpm', 'run build')
+            await execPnpmScript('run build')
             endGroup()
         } else {
             throw new Error(

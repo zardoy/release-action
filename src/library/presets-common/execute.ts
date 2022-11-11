@@ -2,6 +2,7 @@ import { existsSync } from 'fs'
 import { startGroup, endGroup } from '@actions/core'
 import execa from 'execa'
 import { readPackageJsonFile } from 'typed-jsonfile'
+import { execPnpmScript } from '../utils'
 
 // I don't think it's safe
 /** pipes output */
@@ -20,7 +21,7 @@ export const safeExeca = async (command: string, args: string | string[], option
 export const runTestsIfAny = async () => {
     if ((await readPackageJsonFile({ dir: '.' })).scripts?.test) {
         startGroup('pnpm test')
-        await safeExeca('pnpm', 'test')
+        await execPnpmScript('test')
         endGroup()
     } else if (existsSync('test') || existsSync('integration-test') || existsSync('integration-tests')) {
         // a check for case when tests are exist, but forgotten to setup (e.g. add test script)

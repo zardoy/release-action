@@ -2,6 +2,8 @@ import { SemverVersionString, versionBumpingStrategies } from './bumpVersion'
 import { notesGenerators } from './changelogGenerator'
 import { SharedActions } from './presets-common/sharedActions'
 
+export const sharedConfig = {} as { skipScripts: boolean }
+
 // eslint-disable-next-line @typescript-eslint/no-namespace
 namespace Plugin {
     /** What specific plugin hook can override */

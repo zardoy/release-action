@@ -1,21 +1,17 @@
 import fs from 'fs'
 import { join } from 'path'
 import { promisify } from 'util'
-import { endGroup, startGroup } from '@actions/core'
-import execa from 'execa'
 import { trueCasePath } from 'true-case-path'
 import { readPackageJsonFile } from 'typed-jsonfile'
-import urlJoin from 'url-join'
 import prettyBytes from 'pretty-bytes'
 import fastFolderSizeCb from 'fast-folder-size'
-import { Octokit } from '@octokit/rest'
 import { runTestsIfAny, safeExeca } from '../presets-common/execute'
 import { InputData, PresetMain } from '../presets-common/type'
 import { markdownRemoveHeading } from '../readmeUtils'
 import importFromRepo from '../presets-common/importFromRepo'
-import { execAsStep, installGlobalWithPnpm } from '../utils'
+import { execAsStep, execPnpmScript } from '../utils'
 import { OctokitRepoWithUrl } from '../types'
-import { extractChangelogFromGithub, ReleasingChangelog } from '../changelogFromGithub'
+import { extractChangelogFromGithub } from '../changelogFromGithub'
 
 const fastFolderSize = promisify(fastFolderSizeCb)
 
@@ -36,7 +32,7 @@ export const sharedMain = async ({ repo, presetConfig, changelog }: InputData<'v
     if (fs.existsSync('src/configurationType.ts') && !fs.existsSync('src/configurationTypeCache.jsonc')) await runConfigurationGenerator('')
 
     if (!initialPackageJson.scripts?.build && hasCode) await execAsStep('pnpm', 'vscode-framework build')
-    else if (initialPackageJson.scripts?.build) await execAsStep('pnpm', 'run build')
+    else if (initialPackageJson.scripts?.build) await execPnpmScript('run build')
     if (presetConfig.runTest) await runTestsIfAny()
 
     const copyFiles = ['LICENSE']

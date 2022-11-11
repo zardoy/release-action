@@ -1,5 +1,6 @@
 import { endGroup, startGroup } from '@actions/core'
 import execa from 'execa'
+import { sharedConfig } from './config'
 
 export const execAsStep = async (command: string, args: string | string[], options: execa.Options = {}) => {
     startGroup(`${command} ${Array.isArray(args) ? args.join(' ') : args}`)
@@ -13,6 +14,15 @@ export const execAsStep = async (command: string, args: string | string[], optio
         } as any,
     })
     endGroup()
+}
+
+export const execPnpmScript = async (args: string, command = 'pnpm') => {
+    if (sharedConfig.skipScripts) {
+        console.log(`[info] ${command} ${args} skipped (skipScripts)`)
+        return
+    }
+
+    return execAsStep(command, args)
 }
 
 export const getPmVersion = async (pm: 'pnpm') => {

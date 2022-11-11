@@ -9,7 +9,7 @@ import { error, startGroup, endGroup } from '@actions/core'
 import { Command } from 'commander'
 import { getNextVersionAndReleaseNotes } from './bumpVersion'
 import { generateChangelog } from './changelogGenerator'
-import { Config, defaultConfig, GlobalPreset, presetSpecificConfigDefaults, PresetSpecificConfigs } from './config'
+import { Config, defaultConfig, GlobalPreset, presetSpecificConfigDefaults, PresetSpecificConfigs, sharedConfig } from './config'
 import { PresetExports } from './presets-common/type'
 import { presetsPreReleaseTagAdditionalPrefix, resolveSharedActions, runSharedActions, SharedActions } from './presets-common/sharedActions'
 
@@ -19,10 +19,10 @@ type Options = Partial<{
     vsixOnly: boolean
     forceUseVersion: boolean
     autoUpdate: boolean
-    skipScripts: boolean
     publishPrefix: string
     preRelease: string
     tagPrefix: string
+    skipScripts: boolean
 }>
 
 program
@@ -33,6 +33,7 @@ program
     .option('--pre-release', 'Use pre release publishing')
     .option('--publish-prefix', 'Commit prefix required to publish e.g. [publish]')
     .option('--tag-prefix', 'Version tag prefix. Default is v')
+    .option('--skip-scripts', 'Skip automatic execution of ANY build or npm scripts e.g. build, test or lint')
     // eslint-disable-next-line complexity
     .action(async (preset: GlobalPreset, options: Options) => {
         try {
@@ -58,6 +59,10 @@ program
             startGroup('Shared actions for preset')
             console.log(actionsToRun)
             endGroup()
+            const newSharedConfig: typeof sharedConfig = {
+                skipScripts: options.skipScripts ?? false,
+            }
+            Object.assign(sharedConfig, newSharedConfig)
             const [owner, repoName] = process.env.GITHUB_REPOSITORY!.split('/')
             const repo = {
                 owner: owner!,
