@@ -105,7 +105,7 @@ program
                       config,
                   )
                 : undefined
-            if (versionBumpInfo)
+            if (versionBumpInfo?.nextVersion)
                 await modifyPackageJsonFile(
                     { dir: '.' },
                     {
