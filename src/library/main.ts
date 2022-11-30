@@ -7,7 +7,7 @@ import { cosmiconfig } from 'cosmiconfig'
 import { readPackageJsonFile } from 'typed-jsonfile'
 import { error, startGroup, endGroup } from '@actions/core'
 import { Command } from 'commander'
-import { getNextVersionAndReleaseNotes } from './bumpVersion'
+import { findLatestTag, getNextVersionAndReleaseNotes } from './bumpVersion'
 import { generateChangelog } from './changelogGenerator'
 import { Config, defaultConfig, GlobalPreset, presetSpecificConfigDefaults, PresetSpecificConfigs, sharedConfig } from './config'
 import { PresetExports } from './presets-common/type'
@@ -23,6 +23,7 @@ type Options = Partial<{
     preRelease: string
     tagPrefix: string
     skipScripts: boolean
+    syncPrefix: string
 }>
 
 program
@@ -31,9 +32,10 @@ program
     .option('--force-use-version', 'Force use package.json version instead of resolving from commits history')
     .option('--auto-update', 'Force bump patch version and create tag instead of release')
     .option('--pre-release', 'Use pre release publishing')
-    .option('--publish-prefix', 'Commit prefix required to publish e.g. [publish]')
+    .option('--publish-prefix', 'Commit prefix required to publish/release e.g. [publish]')
     .option('--tag-prefix', 'Version tag prefix. Default is v')
     .option('--skip-scripts', 'Skip automatic execution of ANY build or npm scripts e.g. build, test or lint')
+    .option('--sync-prefix', 'Version prefix to pick latest version for release. Similar to --force-use-version, but also implies skipping tagging')
     // eslint-disable-next-line complexity
     .action(async (preset: GlobalPreset, options: Options) => {
         try {
@@ -49,6 +51,11 @@ program
             if (options.autoUpdate) {
                 config.githubPostaction = 'tag'
                 console.log('Using options.autoUpdate')
+            }
+
+            if (options.syncPrefix) {
+                config.githubPostaction = false
+                actionsToRun.bumpVersionAndGenerateChangelog = false
             }
 
             if (options.publishPrefix) config.commitPublishPrefix = options.publishPrefix
@@ -82,6 +89,18 @@ program
                     ref: process.env.GITHUB_SHA!,
                 })
                 doPublish = data.commit.message.startsWith(config.commitPublishPrefix)
+            }
+
+            if (options.syncPrefix && doPublish) {
+                // todo-low support prerelease
+                const latestTag = await findLatestTag({ repo, octokit, tagPrefix: options.syncPrefix })
+                if (!latestTag) throw new Error('Failed to find required latest tag')
+                await modifyPackageJsonFile(
+                    { dir: '.' },
+                    {
+                        version: latestTag.name.slice(options.syncPrefix.length),
+                    },
+                )
             }
 
             const versionBumpInfo = actionsToRun.bumpVersionAndGenerateChangelog

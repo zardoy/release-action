@@ -125,15 +125,12 @@ export interface NextVersionReturn {
 }
 const logCi = (...msg: any) => process.env.CI && console.log(...msg)
 
-/** DEFAULT. wrapper to use latest tag is present */
-export const getNextVersionAndReleaseNotes = async ({
-    octokit,
+export const findLatestTag = async ({
     repo,
-    config,
-    autoUpdate = false,
+    octokit,
     tagPrefix = 'v',
     fallbackPrefix,
-}: GetNextVersionParams): Promise<NextVersionReturn> => {
+}: Pick<GetNextVersionParams, 'octokit' | 'repo' | 'tagPrefix' | 'fallbackPrefix'>) => {
     const { data: tags } = await octokit.repos.listTags({
         ...repo,
         per_page: 20,
@@ -154,8 +151,24 @@ export const getNextVersionAndReleaseNotes = async ({
         }
     }
 
+    if (latestTag) logCi('Found latest tag', latestTag.name, 'on commit', latestTag.commit)
+    else logCi(`Failed to find latest tag from: ${tags.map(tag => tag.name).join(', ')} that satisfies ${tagPrefix} prefix`)
+
+    return latestTag
+}
+
+/** DEFAULT. wrapper to use latest tag is present */
+export const getNextVersionAndReleaseNotes = async ({
+    octokit,
+    repo,
+    config,
+    autoUpdate = false,
+    tagPrefix = 'v',
+    fallbackPrefix,
+}: GetNextVersionParams): Promise<NextVersionReturn> => {
+    const latestTag = await findLatestTag({ repo, octokit, tagPrefix, fallbackPrefix })
+
     if (!latestTag) {
-        logCi(`Failed to find latest tag from: ${tags.map(tag => tag.name).join(', ')} that satisfies ${tagPrefix} prefix`)
         const { version: currentVersion } = await readRootPackageJson()
 
         if (!currentVersion!.startsWith('0.0.0'))
@@ -173,7 +186,6 @@ export const getNextVersionAndReleaseNotes = async ({
         }
     }
 
-    logCi('Found latest tag', latestTag.name, 'on commit', latestTag.commit)
     const data: NextVersionReturn = autoUpdate
         ? {
               bumpType: 'patch',
