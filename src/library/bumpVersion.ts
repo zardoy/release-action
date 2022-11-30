@@ -136,7 +136,7 @@ export const getNextVersionAndReleaseNotes = async ({
 }: GetNextVersionParams): Promise<NextVersionReturn> => {
     const { data: tags } = await octokit.repos.listTags({
         ...repo,
-        per_page: 1,
+        per_page: 20,
     })
     let latestTag: { name: string; commit: { sha } } | undefined
     for (const _tag of tags) {
@@ -155,6 +155,7 @@ export const getNextVersionAndReleaseNotes = async ({
     }
 
     if (!latestTag) {
+        logCi(`Failed to find latest tag from: ${tags.map(tag => tag.name).join(', ')} that satisfies ${tagPrefix} prefix`)
         const { version: currentVersion } = await readRootPackageJson()
 
         if (!currentVersion!.startsWith('0.0.0'))
@@ -172,10 +173,11 @@ export const getNextVersionAndReleaseNotes = async ({
         }
     }
 
+    logCi('Found latest tag', latestTag.name, 'on commit', latestTag.commit)
     const data: NextVersionReturn = autoUpdate
         ? {
               bumpType: 'patch',
-              nextVersion: bumpVersion(latestTag.name.slice(1), 'patch')!,
+              nextVersion: bumpVersion(latestTag.name.slice(tagPrefix.length), 'patch')!,
               commitsByRule: {},
           }
         : await getNextVersionAndReleaseNotesFromTag({
@@ -199,7 +201,6 @@ export const getNextVersionAndReleaseNotesFromTag = async ({
     config,
 }: // addCommitLink = true,
 { tag: Record<'version' | 'commitSha', string> /* addCommitLink?: boolean */ } & BumpVersionParams): Promise<NextVersionReturn> => {
-    logCi('Found latest tag', tagVersion, 'on commit', tagCommitSha)
     let commits: Array<{ sha?: string; commit: { message: string } }> = []
     // #region Fetch commits before tag (exlusive)
     let commitsBeforeTag: Array<{ message: string; sha?: string }>
