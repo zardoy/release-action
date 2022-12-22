@@ -175,6 +175,7 @@ program
 
             if (versionBumpInfo && doPublish) {
                 const tagName = `${tagPrefix}${versionBumpInfo.nextVersion!}`
+                const commitSha = process.env.GITHUB_REF?.replace(/^refs\/heads\//, '') || undefined
                 if (config.githubPostaction === 'release') {
                     const {
                         data: { id: release_id },
@@ -184,6 +185,7 @@ program
                         tag_name: tagName,
                         name: tagName,
                         body: changelog,
+                        target_commitish: commitSha,
                     })
 
                     if (result?.assets)
