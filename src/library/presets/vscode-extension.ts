@@ -25,7 +25,7 @@ export const sharedMain = async ({ repo, presetConfig, changelog }: InputData<'v
 
     const hasCode = hasFramework && fs.existsSync('src/extension.ts')
     // await installGlobalWithPnpm(['vsce', 'ovsx'])
-    await execAsStep('npm', 'i -g vsce ovsx')
+    await execAsStep('npm', 'i -g @vscode/vsce ovsx')
     await execAsStep('vsce', '-V')
     if (hasCode && !fs.existsSync('src/generated.ts')) throw new Error('Missing generated types')
     const { runConfigurationGenerator } = await importFromRepo('vscode-framework/build/cli/configurationFromType').catch(() => ({}))

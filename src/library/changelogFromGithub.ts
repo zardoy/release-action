@@ -38,7 +38,7 @@ export const extractChangelogFromGithub = async (repo: OctokitRepoWithUrl, relea
     }
 
     if (totalCount > RELEASES_LIMIT)
-        markdown += `[size optimization] The list has truncated another ${RELEASES_LIMIT - totalCount} releases. You can view them on [GitHub](${urlJoin(
+        markdown += `\n\n*[size optimization]* The list has truncated another ${totalCount - RELEASES_LIMIT} releases. You can view them on [GitHub](${urlJoin(
             repo.url,
             'releases',
         )})`
