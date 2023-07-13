@@ -104,6 +104,7 @@ export interface Config {
     githubPostaction: 'release' | 'tag' | false
     /** how to order notes by date of the commit. just reverses in case of `desc` */
     // notesOrder: 'asc-by-date' | 'desc-by-date'
+    createReleaseTarget: 'currentCommit' | 'defaultBranch'
 }
 
 // TODO: ban any usage
@@ -126,4 +127,5 @@ export const defaultConfig: Config = {
     linksToSameCommit: true,
     githubPostaction: 'release',
     preset: {},
+    createReleaseTarget: 'defaultBranch',
 }

@@ -185,7 +185,7 @@ program
                         tag_name: tagName,
                         name: tagName,
                         body: changelog,
-                        target_commitish: commitSha,
+                        target_commitish: config.createReleaseTarget === 'currentCommit' ? commitSha : undefined,
                     })
 
                     if (result?.assets)
