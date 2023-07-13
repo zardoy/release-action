@@ -70,13 +70,19 @@ program
                 skipScripts: options.skipScripts ?? false,
             }
             Object.assign(sharedConfig, newSharedConfig)
-            const [owner, repoName] = process.env.GITHUB_REPOSITORY!.split('/')
+            const [owner, repoName] = process.env.GITHUB_REPOSITORY.split('/')
             const repo = {
                 owner: owner!,
                 repo: repoName!,
             }
             const octokit = new Octokit({
                 auth: process.env.GITHUB_TOKEN,
+                log: {
+                    debug() {},
+                    info: console.log,
+                    warn: console.warn,
+                    error: console.error,
+                },
             })
 
             const preRelease = (!!options.preRelease || ('isPreRelease' in config.preset && config.preset.isPreRelease)) ?? false

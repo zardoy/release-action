@@ -214,15 +214,15 @@ export const getNextVersionAndReleaseNotesFromTag = async ({
 }: // addCommitLink = true,
 { tag: Record<'version' | 'commitSha', string> /* addCommitLink?: boolean */ } & BumpVersionParams): Promise<NextVersionReturn> => {
     let commits: Array<{ sha?: string; commit: { message: string } }> = []
-    // #region Fetch commits before tag (exlusive)
-    let commitsBeforeTag: Array<{ message: string; sha?: string }>
-    // eslint-disable-next-line no-constant-condition
-    for (let i = 1; true; i++) {
+    // #region Fetch commits before tag (exclusive)
+    let commitsBeforeTag: Array<{ message: string; sha?: string }> | undefined
+    const limitCommits = 300
+    const perPage = 100
+    for (let i = 1; i <= limitCommits / perPage; i++) {
         const { data: justFetchedCommits } = await octokit.repos.listCommits({
             ...repo,
             sha: process.env.GITHUB_REF?.replace(/^refs\/heads\//, '') || undefined,
-            // i don't think it matters: 30 or 100
-            per_page: 100,
+            per_page: perPage,
             page: i,
         })
         commits = [...commits, ...justFetchedCommits]
@@ -231,6 +231,9 @@ export const getNextVersionAndReleaseNotesFromTag = async ({
         commitsBeforeTag = commits.slice(0, commits.length - justFetchedCommits.length + tagCommitIndex).map(c => ({ message: c.commit.message, sha: c.sha }))
         break
     }
+
+    if (!commitsBeforeTag)
+        throw new Error(`Limit in fetching ${limitCommits} exceeded. If commit with tag ${tagVersion} was removed, you need to create new tag.`)
 
     /** But before strategy resolve */
     let resolvedBumpLevel = 0
