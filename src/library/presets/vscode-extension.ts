@@ -103,7 +103,9 @@ export const main: PresetMain<'vscode-extension'> = async input => {
             })
         } catch (error) {
             // don't care https://github.com/eclipse/openvsx/issues/539
-            if (!error.message?.includes?.('server responded with status 503')) throw error
+            // eslint-disable-next-line prefer-destructuring
+            const message: string | undefined = error.message
+            if (!message || (!message.includes?.('server responded with status 503') && !message.toLowerCase().includes('Server Error'))) throw error
         }
 
     if (presetConfig.attachVsix) {
