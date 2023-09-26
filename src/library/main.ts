@@ -24,6 +24,7 @@ type Options = Partial<{
     tagPrefix: string
     skipScripts: boolean
     syncPrefix: string
+    footer: string
 }>
 
 program
@@ -36,6 +37,7 @@ program
     .option('--tag-prefix', 'Version tag prefix. Default is v')
     .option('--skip-scripts', 'Skip automatic execution of ANY build or npm scripts e.g. build, test or lint')
     .option('--sync-prefix', 'Version prefix to pick latest version for release. Similar to --force-use-version, but also implies skipping tagging')
+    .option('--footer', 'Optional message to include at the end of new release body')
     // eslint-disable-next-line complexity
     .action(async (preset: GlobalPreset, options: Options) => {
         try {
@@ -183,6 +185,12 @@ program
                 const tagName = `${tagPrefix}${versionBumpInfo.nextVersion!}`
                 const commitSha = process.env.GITHUB_REF?.replace(/^refs\/heads\//, '') || undefined
                 if (config.githubPostaction === 'release') {
+                    let body = changelog
+                    if (options.footer) {
+                        body += '\n\n'
+                        body += options.footer
+                    }
+
                     const {
                         data: { id: release_id },
                     } = await octokit.repos.createRelease({
@@ -190,7 +198,7 @@ program
                         prerelease: preRelease,
                         tag_name: tagName,
                         name: tagName,
-                        body: changelog,
+                        body,
                         target_commitish: config.createReleaseTarget === 'currentCommit' ? commitSha : undefined,
                     })
 
