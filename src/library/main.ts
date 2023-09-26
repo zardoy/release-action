@@ -33,11 +33,11 @@ program
     .option('--force-use-version', 'Force use package.json version instead of resolving from commits history')
     .option('--auto-update', 'Force bump patch version and create tag instead of release')
     .option('--pre-release', 'Use pre release publishing')
-    .option('--publish-prefix', 'Commit prefix required to publish/release e.g. [publish]')
-    .option('--tag-prefix', 'Version tag prefix. Default is v')
+    .option('--publish-prefix <str>', 'Commit prefix required to publish/release e.g. [publish]')
+    .option('--tag-prefix <str>', 'Version tag prefix. Default is v')
     .option('--skip-scripts', 'Skip automatic execution of ANY build or npm scripts e.g. build, test or lint')
-    .option('--sync-prefix', 'Version prefix to pick latest version for release. Similar to --force-use-version, but also implies skipping tagging')
-    .option('--footer', 'Optional message to include at the end of new release body')
+    .option('--sync-prefix <str>', 'Version prefix to pick latest version for release. Similar to --force-use-version, but also implies skipping tagging')
+    .option('--footer <msg>', 'Optional message to include at the end of new release body')
     // eslint-disable-next-line complexity
     .action(async (preset: GlobalPreset, options: Options) => {
         try {
