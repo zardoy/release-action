@@ -1,7 +1,7 @@
 {
     "name": "zardoy-release",
     "version": "0.1.1",
-    "bin": "build/bin.js",
+    "bin": "./bin.js",
     "repository": "https://github.com/zardoy/publish-action.git",
     "author": "Vitaly Turovsky <vital2580@icloud.com>",
     "license": "MIT",
