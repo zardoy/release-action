@@ -1,3 +1,4 @@
+/* eslint-disable curly */
 /* eslint-disable max-depth */
 import { promises } from 'fs'
 import { Octokit } from '@octokit/rest'
@@ -5,8 +6,9 @@ import { defaultsDeep } from 'lodash'
 import { modifyPackageJsonFile } from 'modify-json-file'
 import { cosmiconfig } from 'cosmiconfig'
 import { readPackageJsonFile } from 'typed-jsonfile'
-import { error, startGroup, endGroup } from '@actions/core'
+import { error, startGroup, endGroup, setOutput } from '@actions/core'
 import { Command } from 'commander'
+import globby from 'globby'
 import { findLatestTag, getNextVersionAndReleaseNotes } from './bumpVersion'
 import { generateChangelog } from './changelogGenerator'
 import { Config, defaultConfig, GlobalPreset, presetSpecificConfigDefaults, PresetSpecificConfigs, sharedConfig } from './config'
@@ -148,7 +150,12 @@ program
                 throw new Error(`Incorrect preset ${preset}\n${error.message}`)
             }
 
-            await presetToUse.beforeSharedActions?.(config)
+            const changes = await presetToUse.beforeSharedActions?.(config)
+            if (changes?.noPublish) {
+                console.log('Preset requested to skip publishing')
+                doPublish = false
+            }
+
             await runSharedActions(preset, octokit, repo, actionsToRun)
             if (versionBumpInfo && !versionBumpInfo.nextVersion) {
                 console.warn('No next bumped version, no publishing...')
@@ -202,14 +209,24 @@ program
                         target_commitish: config.createReleaseTarget === 'currentCommit' ? commitSha : undefined,
                     })
 
-                    if (result?.assets)
-                        for (const { path, name } of result.assets)
+                    const assets =
+                        result?.assets ??
+                        (config.attachReleaseFiles &&
+                            (await globby(config.attachReleaseFiles)).map(path => ({
+                                name: path.split('/').pop()!,
+                                path,
+                            })))
+
+                    if (assets) {
+                        for (const { path, name } of assets) {
                             await octokit.repos.uploadReleaseAsset({
                                 ...repo,
                                 data: (await promises.readFile(path)) as any,
                                 name,
                                 release_id,
                             })
+                        }
+                    }
                 } else if (config.githubPostaction === 'tag' && versionBumpInfo.latestTagCommitSha) {
                     await octokit.git.createRef({
                         ...repo,
@@ -217,6 +234,8 @@ program
                         sha: versionBumpInfo.latestTagCommitSha,
                     })
                 }
+
+                setOutput('tag', tagName)
             }
 
             if (result?.postRun) result.postRun(octokit, await readPackageJsonFile({ dir: '.' }))

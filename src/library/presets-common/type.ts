@@ -29,4 +29,10 @@ export type OutputData = {
 
 export type PresetMain<T extends GlobalPreset> = (data: InputData<T>) => Promise<void | OutputData>
 
-export type PresetExports = { main: PresetMain<any>; beforeSharedActions?: (config: Config) => void | Promise<void> }
+type BeforeSharedActionsChange = {
+    noPublish?: boolean
+}
+
+type MaybePromise<T> = T | Promise<T>
+
+export type PresetExports = { main: PresetMain<any>; beforeSharedActions?: (config: Config) => MaybePromise<void | BeforeSharedActionsChange> }

@@ -55,6 +55,7 @@ const npmSpecificConfig = {
     publishTag: 'latest',
     // esm https://gist.github.com/sindresorhus/a39789f98801d908bbc7ff3ecc99d99c#how-can-i-move-my-commonjs-project-to-esm
     minimumNodeVersion: '^12.20.0 || ^14.13.1 || >=16.0.0' as string | null,
+    publishOnlyIfChanged: false,
 }
 
 export const presetSpecificConfigDefaults = makePresetConfigs({
@@ -89,6 +90,7 @@ export interface Config {
     bumpingVersionStrategy: 'none' | keyof typeof versionBumpingStrategies
     plugins: Record<string, Plugin.Plugin>
     cleanSource: boolean
+    attachReleaseFiles: string
     /** Publish and generate changelog only when commit with [publish] in start is pushed (or custom regexp)
      * @default false By default it would always publish
      */
@@ -119,6 +121,7 @@ export const defaultConfig: Config = {
     commitPublishPrefix: false,
     bumpingVersionStrategy: 'semverUnstable',
     plugins: builtinPlugins,
+    attachReleaseFiles: '',
     changelog: {
         style: 'default',
     },
