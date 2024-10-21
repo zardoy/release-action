@@ -4,7 +4,7 @@
         // TODO try to figure out why typed-jsonfile mocking fails without this
         // "allowSyntheticDefaultImports": false,
         "outDir": "build",
-        "module": "ES2022"
+        "target": "ES2022"
     },
     "include": [
         "./src/library"
