@@ -47,10 +47,10 @@ export const beforeSharedActions = async (config: Config) => {
     // TODO! use custom tsc instead of this method
     if (config.cleanSource) await del(['src/**.{spec,test}.[jt]s'])
     const preset = config.preset as Parameters<PresetMain<'npm'>>[0]['presetConfig']
-    if (preset.publishOnlyIfChanged) {
-        const { name } = await readRootPackageJson()
-        const downloadedLatest
-    }
+    // if (preset.publishOnlyIfChanged) {
+    //     const { name } = await readRootPackageJson()
+    //     const downloadedLatest
+    // }
 }
 
 const validatePaths = async (cwd: string, json: PackageJson) => {
