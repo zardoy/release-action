@@ -86,6 +86,7 @@ test('Just bumps correctly', async () => {
             "fix serious issue",
           ],
         },
+        "latestTagName": "v0.0.9",
         "nextVersion": "0.0.10",
       }
     `)
@@ -99,6 +100,7 @@ test('No version bump', async () => {
       {
         "bumpType": "none",
         "commitsByRule": {},
+        "latestTagName": "v0.0.9",
         "nextVersion": undefined,
       }
     `)
@@ -124,6 +126,7 @@ test('Just bumps correctly when stable', async () => {
             "first fixes",
           ],
         },
+        "latestTagName": "v1.0.9",
         "nextVersion": "1.1.0",
       }
     `)
@@ -163,6 +166,7 @@ test("Doesn't pick commits below version", async () => {
             "first fixes",
           ],
         },
+        "latestTagName": "v1.0.9",
         "nextVersion": "1.1.0",
       }
     `)
@@ -196,6 +200,7 @@ test('BREAKING gives major', async () => {
             "first fixes",
           ],
         },
+        "latestTagName": "v1.0.9",
         "nextVersion": "2.0.0",
       }
     `)
@@ -226,6 +231,7 @@ test('BREAKING gives major on unstable', async () => {
             "first fixes",
           ],
         },
+        "latestTagName": "v0.0.7",
         "nextVersion": "0.1.0",
       }
     `)
@@ -263,6 +269,7 @@ test('Extracts scopes correctly', async () => {
             "**library-action**: first fixes",
           ],
         },
+        "latestTagName": "v0.0.7",
         "nextVersion": "0.1.0",
       }
     `)
@@ -296,6 +303,7 @@ test("Extracts sha's correctly", async () => {
             "something was contributed (#123)",
           ],
         },
+        "latestTagName": "v0.0.9",
         "nextVersion": "0.1.0",
       }
     `)
@@ -334,6 +342,7 @@ test('Extracts conventional commit info', async () => {
             "TypeError: Cannot read property 'nextVersion' of undefined NPM Release",
           ],
         },
+        "latestTagName": "v0.0.9",
         "nextVersion": "0.0.10",
       }
     `)
@@ -376,6 +385,7 @@ Tests were hard to fix`
             "first fixes",
           ],
         },
+        "latestTagName": "v1.0.9",
         "nextVersion": "1.1.0",
       }
     `)
