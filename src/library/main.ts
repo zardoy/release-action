@@ -250,7 +250,10 @@ program
             setOutput('previousTag', versionBumpInfo?.latestTagName)
             if (changelog && latestUsedTag) {
                 setOutput('latestTag', latestUsedTag)
-                setOutput('changelog', extractChangelogFromGithub({ ...repo, url: '' }, { changelog, version: latestUsedTag }, { skipGithubReleases: true }))
+                setOutput(
+                    'changelog',
+                    (await extractChangelogFromGithub({ ...repo, url: '' }, { changelog, version: latestUsedTag }, { skipGithubReleases: true })).markdown,
+                )
             }
 
             if (result?.postRun) result.postRun(octokit, await readPackageJsonFile({ dir: '.' }))
