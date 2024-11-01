@@ -14,6 +14,7 @@ import { generateChangelog } from './changelogGenerator'
 import { Config, defaultConfig, GlobalPreset, presetSpecificConfigDefaults, PresetSpecificConfigs, sharedConfig } from './config'
 import { PresetExports } from './presets-common/type'
 import { presetsPreReleaseTagAdditionalPrefix, resolveSharedActions, runSharedActions, SharedActions } from './presets-common/sharedActions'
+import { extractChangelogFromGithub } from './changelogFromGithub'
 
 export const program = new Command()
 
@@ -27,6 +28,7 @@ type Options = Partial<{
     skipScripts: boolean
     syncPrefix: string
     footer: string
+    noGithub: boolean
 }>
 
 program
@@ -40,6 +42,7 @@ program
     .option('--skip-scripts', 'Skip automatic execution of ANY build or npm scripts e.g. build, test or lint')
     .option('--sync-prefix <str>', 'Version prefix to pick latest version for release. Similar to --force-use-version, but also implies skipping tagging')
     .option('--footer <msg>', 'Optional message to include at the end of new release body')
+    .option('--no-github', 'Do not create GitHub release or tag')
     // eslint-disable-next-line complexity
     .action(async (preset: GlobalPreset, options: Options) => {
         try {
@@ -123,6 +126,7 @@ program
                       fallbackPrefix: initialTagPrefix,
                   })
                 : undefined
+            let latestUsedTag = versionBumpInfo?.latestTagName
             if (versionBumpInfo?.usingInExistingEnv) console.log('No previous tool usage found. Enabling usingInExistingEnv mode')
             const changelog = versionBumpInfo
                 ? generateChangelog(
@@ -188,8 +192,13 @@ program
                 preRelease,
             })
 
+            if (options.noGithub) {
+                config.githubPostaction = false
+            }
+
             if (versionBumpInfo && doPublish) {
                 const tagName = `${tagPrefix}${versionBumpInfo.nextVersion!}`
+                latestUsedTag = tagName
                 const commitSha = process.env.GITHUB_REF?.replace(/^refs\/heads\//, '') || undefined
                 if (config.githubPostaction === 'release') {
                     let body = changelog
@@ -236,6 +245,12 @@ program
                 }
 
                 setOutput('tag', tagName)
+            }
+
+            setOutput('previousTag', versionBumpInfo?.latestTagName)
+            if (changelog && latestUsedTag) {
+                setOutput('latestTag', latestUsedTag)
+                setOutput('changelog', extractChangelogFromGithub({ ...repo, url: '' }, { changelog, version: latestUsedTag }, { skipGithubReleases: true }))
             }
 
             if (result?.postRun) result.postRun(octokit, await readPackageJsonFile({ dir: '.' }))

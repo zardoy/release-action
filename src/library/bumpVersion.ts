@@ -122,6 +122,7 @@ export interface NextVersionReturn {
     /** No tags found, and package version doesn't start with 0.0.0 */
     usingInExistingEnv?: boolean
     latestTagCommitSha?: string
+    latestTagName?: string
 }
 const logCi = (...msg: any) => process.env.CI && console.log(...msg)
 
@@ -201,7 +202,7 @@ export const getNextVersionAndReleaseNotes = async ({
               repo,
               config,
           })
-    return { ...data, latestTagCommitSha: latestTag.commit.sha }
+    return { ...data, latestTagCommitSha: latestTag.commit.sha, latestTagName: latestTag.name }
 }
 
 /** use with fetched tag */

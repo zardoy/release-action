@@ -5,6 +5,7 @@ import { OctokitRepoWithUrl } from './types'
 const RELEASES_LIMIT = 100
 
 interface Options {
+    skipGithubReleases?: boolean
     // lowerHeading?: false,
 }
 
@@ -15,7 +16,7 @@ export interface ReleasingChangelog {
     date?: Date
 }
 
-export const extractChangelogFromGithub = async (repo: OctokitRepoWithUrl, releasingChangelog: ReleasingChangelog, _options: Options = {}) => {
+export const extractChangelogFromGithub = async (repo: OctokitRepoWithUrl, releasingChangelog: ReleasingChangelog, options: Options = {}) => {
     // eslint-disable-next-line arrow-body-style
     const replaceHashAndIssues = (input: string) => {
         return input
@@ -30,7 +31,7 @@ export const extractChangelogFromGithub = async (repo: OctokitRepoWithUrl, relea
         tagName: releasingTag,
         description: releasingChangelog.changelog,
     }
-    const { totalCount, releases } = await queryRepositoryReleases(repo)
+    const { totalCount, releases } = options.skipGithubReleases ? { totalCount: 0, releases: [] } : await queryRepositoryReleases(repo)
     let markdown = ''
     for (const { createdAt, name, tagName, description } of [releasingRelease, ...releases]) {
         const dateFormatted = new Date(createdAt).toISOString().split('T')[0]!
