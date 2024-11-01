@@ -28,11 +28,12 @@ type Options = Partial<{
     skipScripts: boolean
     syncPrefix: string
     footer: string
-    noGithub: boolean
+    skipGithub: boolean
 }>
 
 program
     .argument('<preset>', 'Preset to use')
+    // warning: do not create no- options!
     .option('--vsix-only', 'vscode-extension preset: attach vsix to release instead of publishing', false)
     .option('--force-use-version', 'Force use package.json version instead of resolving from commits history')
     .option('--auto-update', 'Force bump patch version and create tag instead of release')
@@ -42,12 +43,12 @@ program
     .option('--skip-scripts', 'Skip automatic execution of ANY build or npm scripts e.g. build, test or lint')
     .option('--sync-prefix <str>', 'Version prefix to pick latest version for release. Similar to --force-use-version, but also implies skipping tagging')
     .option('--footer <msg>', 'Optional message to include at the end of new release body')
-    .option('--no-github', 'Do not create GitHub release or tag')
+    .option('--skip-github', 'Do not create GitHub release or tag')
     // eslint-disable-next-line complexity
     .action(async (preset: GlobalPreset, options: Options) => {
         try {
             // eslint-disable-next-line @typescript-eslint/no-require-imports
-            console.log(`zardoy-release v${require('../package.json').version}`)
+            console.log(`zardoy-release v${require('../package.json').version}`, JSON.stringify(options))
             if (!process.env.GITHUB_TOKEN) throw new Error('GITHUB_TOKEN is not defined. Make sure you pass it via env from GitHub action')
             if (!process.env.CI) throw new Error('This tool is intended to be run in GitHub action workflow')
             const userConfig = await cosmiconfig('release').search()
@@ -192,7 +193,7 @@ program
                 preRelease,
             })
 
-            if (options.noGithub) {
+            if (options.skipGithub) {
                 config.githubPostaction = false
             }
 
