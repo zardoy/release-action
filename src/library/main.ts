@@ -29,6 +29,7 @@ type Options = Partial<{
     syncPrefix: string
     footer: string
     skipGithub: boolean
+    outputFile: string
 }>
 
 program
@@ -44,6 +45,7 @@ program
     .option('--sync-prefix <str>', 'Version prefix to pick latest version for release. Similar to --force-use-version, but also implies skipping tagging')
     .option('--footer <msg>', 'Optional message to include at the end of new release body')
     .option('--skip-github', 'Do not create GitHub release or tag')
+    .option('--output-file <file>', 'Output file to write release info to')
     // eslint-disable-next-line complexity
     .action(async (preset: GlobalPreset, options: Options) => {
         try {
@@ -248,12 +250,29 @@ program
                 setOutput('tag', tagName)
             }
 
-            setOutput('previousTag', versionBumpInfo?.latestTagName)
+            const previousTag = versionBumpInfo?.latestTagName
+            setOutput('previousTag', previousTag)
+            let changelogMd = ''
             if (changelog && latestUsedTag) {
                 setOutput('latestTag', latestUsedTag)
-                setOutput(
-                    'changelog',
-                    (await extractChangelogFromGithub({ ...repo, url: '' }, { changelog, version: latestUsedTag }, { skipGithubReleases: true })).markdown,
+                changelogMd = (await extractChangelogFromGithub({ ...repo, url: '' }, { changelog, version: latestUsedTag }, { skipGithubReleases: true }))
+                    .markdown
+                setOutput('changelog', changelogMd)
+            }
+
+            if (options.outputFile) {
+                await promises.writeFile(
+                    options.outputFile,
+                    JSON.stringify(
+                        {
+                            latestTag: latestUsedTag,
+                            changelog: changelogMd,
+                            previousTag,
+                        },
+                        null,
+                        2,
+                    ),
+                    'utf8',
                 )
             }
 
