@@ -15,7 +15,7 @@ import { Config } from '../config'
 
 // going to add more advanced functionality to provide better experience for forks
 
-export const main: PresetMain<'npm'> = async ({ presetConfig, versionBumpInfo: { usingInExistingEnv } = {}, doPublish }) => {
+export const main: PresetMain<'npm'> = async ({ presetConfig, versionBumpInfo: { usingInExistingEnv } = {}, doPublish, preRelease }) => {
     const initialPackageJson = await readRootPackageJson()
     if (initialPackageJson.private) throw new Error("Packages that are going to publish to NPM can't be private")
 
@@ -33,7 +33,8 @@ export const main: PresetMain<'npm'> = async ({ presetConfig, versionBumpInfo: {
     await validatePaths(process.cwd(), await readPackageJsonFile({ dir: process.cwd() }))
 
     startGroup('publish')
-    await execa('pnpm', ['publish', '--access', 'public', '--no-git-checks', '--ignore-scripts', '--tag', presetConfig.publishTag], { stdio: 'inherit' })
+    const PUBLISH_TAG = presetConfig.publishTag === 'latest' && preRelease ? 'next' : presetConfig.publishTag
+    await execa('pnpm', ['publish', '--access', 'public', '--no-git-checks', '--ignore-scripts', '--tag', PUBLISH_TAG], { stdio: 'inherit' })
     endGroup()
 
     return {
