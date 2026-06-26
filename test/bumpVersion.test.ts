@@ -1,7 +1,7 @@
 import * as typedJsonFile from 'typed-jsonfile'
-import { getNextVersionAndReleaseNotes } from '../src/library/bumpVersion'
-import { defaultConfig } from '../src/library/config'
-import { getMockedOctokit } from './utils'
+import { getNextVersionAndReleaseNotes } from '../src/library/bumpVersion.js'
+import { defaultConfig } from '../src/library/config.js'
+import { getMockedOctokit } from './utils.js'
 
 export type Commit = {
     message: string

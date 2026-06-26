@@ -1,5 +1,5 @@
 import { graphql } from '@octokit/graphql';
-import { OctokitRepo } from './types';
+import { OctokitRepo } from './types.js';
 
 export const queryRepositoryReleases = async (
     repo: OctokitRepo

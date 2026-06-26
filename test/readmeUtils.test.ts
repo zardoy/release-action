@@ -1,4 +1,4 @@
-import { markdownRemoveHeading } from '../src/library/readmeUtils'
+import { markdownRemoveHeading } from '../src/library/readmeUtils.js'
 
 test('Removes heading', async () => {
     expect(

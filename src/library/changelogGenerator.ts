@@ -1,6 +1,6 @@
 import { sortBy } from 'lodash'
-import { BasicReleaseType, NextVersionReturn } from './bumpVersion'
-import { Config } from './config'
+import { BasicReleaseType, NextVersionReturn } from './bumpVersion.js'
+import { Config } from './config.js'
 
 // in future it will changed to string
 export type NoteGeneratorName = BasicReleaseType

@@ -3,15 +3,15 @@ import { join } from 'path'
 import { endGroup, startGroup } from '@actions/core'
 import execa from 'execa'
 import got from 'got'
-import { gt } from 'semver'
+import semver from 'semver'
 import { PackageJson, SetRequired } from 'type-fest'
 import { readPackageJsonFile } from 'typed-jsonfile'
 import globby from 'globby'
 import del from 'del'
-import { generateNpmPackageJsonFields } from '../presets-common/generatePackageJsonFields'
-import { PresetMain } from '../presets-common/type'
-import { readRootPackageJson } from '../util'
-import { Config } from '../config'
+import { generateNpmPackageJsonFields } from '../presets-common/generatePackageJsonFields.js'
+import { PresetMain } from '../presets-common/type.js'
+import { readRootPackageJson } from '../util.js'
+import { Config } from '../config.js'
 
 // going to add more advanced functionality to provide better experience for forks
 
@@ -27,7 +27,7 @@ export const main: PresetMain<'npm'> = async ({ presetConfig, versionBumpInfo: {
         const {
             body: { version: latestVersionOnNpm },
         } = await got<SetRequired<PackageJson, 'version'>>(`https://cdn.jsdelivr.net/npm/${packageJson.name!}/package.json`, { responseType: 'json' })
-        if (!gt(packageJson.version!, latestVersionOnNpm)) throw new Error('When no tags found, version in package.json must be greater than that on NPM')
+        if (!semver.gt(packageJson.version!, latestVersionOnNpm)) throw new Error('When no tags found, version in package.json must be greater than that on NPM')
     }
 
     await validatePaths(process.cwd(), await readPackageJsonFile({ dir: process.cwd() }))

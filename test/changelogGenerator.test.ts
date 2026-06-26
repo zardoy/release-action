@@ -1,7 +1,7 @@
-import { getNextVersionAndReleaseNotes } from '../src/library/bumpVersion'
-import { defaultConfig } from '../src/library/config'
-import { generateChangelog } from '../src/library/changelogGenerator'
-import { getMockedOctokit } from './utils'
+import { getNextVersionAndReleaseNotes } from '../src/library/bumpVersion.js'
+import { defaultConfig } from '../src/library/config.js'
+import { generateChangelog } from '../src/library/changelogGenerator.js'
+import { getMockedOctokit } from './utils.js'
 
 test('Generatees changelog', async () => {
     const result = await getNextVersionAndReleaseNotes({

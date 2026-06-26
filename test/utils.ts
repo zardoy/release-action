@@ -1,5 +1,5 @@
 import { Octokit } from '@octokit/rest'
-import { Commit } from './bumpVersion.test'
+import { Commit } from './bumpVersion.test.js'
 
 export const getMockedOctokit = (tags: { name: `v${string}`; commit: { sha: string } }[], commitsInput: (Commit | string)[]) => {
     const commits: { sha: string; commit: { message: string } }[] = commitsInput.map(data => {

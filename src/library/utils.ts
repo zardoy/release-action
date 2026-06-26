@@ -1,6 +1,6 @@
 import { endGroup, startGroup } from '@actions/core'
 import execa from 'execa'
-import { sharedConfig } from './config'
+import { sharedConfig } from './config.js'
 
 export const execAsStep = async (command: string, args: string | string[], options: execa.Options = {}) => {
     startGroup(`${command} ${Array.isArray(args) ? args.join(' ') : args}`)

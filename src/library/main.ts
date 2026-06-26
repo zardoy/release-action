@@ -1,6 +1,8 @@
 /* eslint-disable curly */
 /* eslint-disable max-depth */
-import { promises } from 'fs'
+import { promises, readFileSync } from 'fs'
+import { dirname, join } from 'path'
+import { fileURLToPath } from 'url'
 import { Octokit } from '@octokit/rest'
 import { defaultsDeep } from 'lodash'
 import { modifyPackageJsonFile } from 'modify-json-file'
@@ -9,12 +11,28 @@ import { readPackageJsonFile } from 'typed-jsonfile'
 import { error, startGroup, endGroup, setOutput } from '@actions/core'
 import { Command } from 'commander'
 import globby from 'globby'
-import { findLatestTag, getNextVersionAndReleaseNotes } from './bumpVersion'
-import { generateChangelog } from './changelogGenerator'
-import { Config, defaultConfig, GlobalPreset, presetSpecificConfigDefaults, PresetSpecificConfigs, sharedConfig } from './config'
-import { PresetExports } from './presets-common/type'
-import { presetsPreReleaseTagAdditionalPrefix, resolveSharedActions, runSharedActions, SharedActions } from './presets-common/sharedActions'
-import { extractChangelogFromGithub } from './changelogFromGithub'
+import { findLatestTag, getNextVersionAndReleaseNotes } from './bumpVersion.js'
+import { generateChangelog } from './changelogGenerator.js'
+import { Config, defaultConfig, GlobalPreset, presetSpecificConfigDefaults, PresetSpecificConfigs, sharedConfig } from './config.js'
+import { PresetExports } from './presets-common/type.js'
+import { presetsPreReleaseTagAdditionalPrefix, resolveSharedActions, runSharedActions, SharedActions } from './presets-common/sharedActions.js'
+import { extractChangelogFromGithub } from './changelogFromGithub.js'
+
+const resolveOwnPackageVersion = () => {
+    let dir = dirname(fileURLToPath(import.meta.url))
+    for (;;) {
+        const candidate = join(dir, 'package.json')
+        try {
+            const pkg = JSON.parse(readFileSync(candidate, 'utf8')) as { name?: string; version?: string }
+            if (pkg.name === 'zardoy-release') return pkg.version!
+        } catch {
+            // keep walking up
+        }
+        const parent = dirname(dir)
+        if (parent === dir) throw new Error('Could not find zardoy-release package.json')
+        dir = parent
+    }
+}
 
 export const program = new Command()
 
@@ -49,8 +67,7 @@ program
     // eslint-disable-next-line complexity
     .action(async (preset: GlobalPreset, options: Options) => {
         try {
-            // eslint-disable-next-line @typescript-eslint/no-require-imports
-            console.log(`zardoy-release v${require('../package.json').version}`, JSON.stringify(options))
+            console.log(`zardoy-release v${resolveOwnPackageVersion()}`, JSON.stringify(options))
             if (!process.env.GITHUB_TOKEN) throw new Error('GITHUB_TOKEN is not defined. Make sure you pass it via env from GitHub action')
             if (!process.env.CI) throw new Error('This tool is intended to be run in GitHub action workflow')
             const userConfig = await cosmiconfig('release').search()
@@ -151,10 +168,9 @@ program
 
             let presetToUse: PresetExports
             try {
-                // eslint-disable-next-line @typescript-eslint/no-require-imports
-                presetToUse = require(`./presets/${preset}`) as PresetExports
+                presetToUse = (await import(`./presets/${preset}.js`)) as PresetExports
             } catch (error) {
-                throw new Error(`Incorrect preset ${preset}\n${error.message}`)
+                throw new Error(`Incorrect preset ${preset}\n${(error as Error).message}`)
             }
 
             const changes = await presetToUse.beforeSharedActions?.(config)

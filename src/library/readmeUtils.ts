@@ -19,7 +19,7 @@ export const markdownRemoveHeading = async (markdown: string, headingToRemove: s
     return remark()
         .use(() => {
             return rootNode => {
-                //@ts-expect-error TODO update remark when esm issues with jest are resolved
+                //@ts-expect-error remark types lag behind ESM usage
                 const { children } = rootNode
                 const headingToRemoveIndex = children.findIndex(node => {
                     if (node.type !== 'heading' || node.depth !== 2) return false

@@ -1,5 +1,5 @@
-import { extractChangelogFromGithub } from '../src/library/changelogFromGithub'
-import { OctokitRepoWithUrl } from '../src/library/types'
+import { extractChangelogFromGithub } from '../src/library/changelogFromGithub.js'
+import { OctokitRepoWithUrl } from '../src/library/types.js'
 
 let mockedReleases = {}
 

@@ -1,10 +1,11 @@
 import fs from 'fs'
 import gitly from 'gitly'
-import { join } from 'path'
+import { dirname, join } from 'path'
+import { fileURLToPath } from 'url'
 import fsExtra from 'fs-extra'
 
 export const getFixtureSetuper = (fixtureName: string, repo: `${string}/${string}#${string}`) => {
-    const fixtureBasePath = join(__dirname, 'fixtures', fixtureName)
+    const fixtureBasePath = join(dirname(fileURLToPath(import.meta.url)), 'fixtures', fixtureName)
     const fixtureOut = join(fixtureBasePath, 'out')
     return {
         fixturePath: fixtureOut,

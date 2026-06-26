@@ -3,8 +3,10 @@
     "compilerOptions": {
         // TODO try to figure out why typed-jsonfile mocking fails without this
         // "allowSyntheticDefaultImports": false,
+        "module": "Node16",
+        "moduleResolution": "Node16",
         "outDir": "build",
-        "target": "ES2021"
+        "target": "ES2022"
     },
     "include": [
         "./src/library"

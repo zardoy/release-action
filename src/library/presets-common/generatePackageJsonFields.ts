@@ -4,9 +4,9 @@ import { modifyPackageJsonFile } from 'modify-json-file'
 import { PackageJson } from 'type-fest'
 import { readPackageJsonFile, readTsconfigJsonFile, writePackageJsonFile } from 'typed-jsonfile'
 import { defaultsDeep } from 'lodash'
-import { Config, PresetSpecificConfigs } from '../config'
-import { OctokitRepo } from '../types'
-import { SharedActions } from './sharedActions'
+import { Config, PresetSpecificConfigs } from '../config.js'
+import { OctokitRepo } from '../types.js'
+import { SharedActions } from './sharedActions.js'
 
 type NpmConfig = PresetSpecificConfigs['npm']
 

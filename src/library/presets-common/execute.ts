@@ -2,7 +2,7 @@ import { existsSync } from 'fs'
 import { startGroup, endGroup } from '@actions/core'
 import execa from 'execa'
 import { readPackageJsonFile } from 'typed-jsonfile'
-import { execPnpmScript } from '../utils'
+import { execPnpmScript } from '../utils.js'
 
 // I don't think it's safe
 /** pipes output */

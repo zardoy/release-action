@@ -1,8 +1,8 @@
 // Don't publish extension and attach `.vsix` asset to every release instead
 
 import { readPackageJsonFile } from 'typed-jsonfile'
-import { InputData, OutputData } from '../presets-common/type'
-import { sharedMain } from './vscode-extension'
+import { InputData, OutputData } from '../presets-common/type.js'
+import { sharedMain } from './vscode-extension.js'
 
 export const main = async (input: InputData<'vscode-extension'>): Promise<OutputData> => {
     const { vsixPath } = await sharedMain(input)

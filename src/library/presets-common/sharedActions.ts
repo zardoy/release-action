@@ -3,10 +3,10 @@ import { Octokit, RestEndpointMethodTypes } from '@octokit/rest'
 import { defaultsDeep } from 'lodash'
 import { PackageJson, PartialDeep } from 'type-fest'
 import { writePackageJsonFile } from 'typed-jsonfile'
-import { GlobalPreset } from '../config'
-import { readRootPackageJson } from '../util'
-import { execPnpmScript } from '../utils'
-import { runTestsIfAny, safeExeca } from './execute'
+import { GlobalPreset } from '../config.js'
+import { readRootPackageJson } from '../util.js'
+import { execPnpmScript } from '../utils.js'
+import { runTestsIfAny, safeExeca } from './execute.js'
 
 /** Opinionated and will be changed in future */
 export type SharedActions = {

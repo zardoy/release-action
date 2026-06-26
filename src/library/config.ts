@@ -1,6 +1,6 @@
-import { SemverVersionString, versionBumpingStrategies } from './bumpVersion'
-import { notesGenerators } from './changelogGenerator'
-import { SharedActions } from './presets-common/sharedActions'
+import { SemverVersionString, versionBumpingStrategies } from './bumpVersion.js'
+import { notesGenerators } from './changelogGenerator.js'
+import { SharedActions } from './presets-common/sharedActions.js'
 
 export const sharedConfig = {} as { skipScripts: boolean }
 

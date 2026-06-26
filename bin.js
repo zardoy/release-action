@@ -1,2 +1,4 @@
 #!/usr/bin/env node
-require('./build/main').program.parse(process.argv)
+import { program } from './build/main.js'
+
+program.parse(process.argv)

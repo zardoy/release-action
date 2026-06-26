@@ -1,11 +1,10 @@
 import { Octokit } from '@octokit/rest'
-import got from 'got/dist/source'
-import { inc as bumpVersion, major, ReleaseType, gt } from 'semver'
+import semver, { type ReleaseType } from 'semver'
 import { Except } from 'type-fest'
 import { readPackageJsonFile } from 'typed-jsonfile'
-import { Config } from './config'
-import { OctokitRepo } from './types'
-import { readRootPackageJson } from './util'
+import { Config } from './config.js'
+import { OctokitRepo } from './types.js'
+import { readRootPackageJson } from './util.js'
 
 export type SemverVersionString = `${number}.${number}.${number}` | `${number}.${number}.${number}-${string}`
 
@@ -73,7 +72,7 @@ export const versionBumpingStrategies = makeVersionMaps({
      * Used only when major version is 0
      */
     semverUnstable: {
-        isApplicable: version => major(version) === 0,
+        isApplicable: version => semver.major(version) === 0,
         major: 'minor',
         minor: 'patch',
         patch: 'patch',
@@ -190,7 +189,7 @@ export const getNextVersionAndReleaseNotes = async ({
     const data: NextVersionReturn = autoUpdate
         ? {
               bumpType: 'patch',
-              nextVersion: bumpVersion(latestTag.name.slice(tagPrefix.length), 'patch')!,
+              nextVersion: semver.inc(latestTag.name.slice(tagPrefix.length), 'patch')!,
               commitsByRule: {},
           }
         : await getNextVersionAndReleaseNotesFromTag({
@@ -369,7 +368,7 @@ export const getNextVersionAndReleaseNotesFromTag = async ({
     }
 
     if (bumpType !== 'none') {
-        nextVersion = bumpVersion(tagVersion, bumpType)!
+        nextVersion = semver.inc(tagVersion, bumpType)!
         if (nextVersion === null) throw new Error('Just bumped version is invalid')
     }
 

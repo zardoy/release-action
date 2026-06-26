@@ -1,6 +1,6 @@
 import urlJoin from 'url-join'
-import { queryRepositoryReleases } from './queryRepositoryReleases'
-import { OctokitRepoWithUrl } from './types'
+import { queryRepositoryReleases } from './queryRepositoryReleases.js'
+import { OctokitRepoWithUrl } from './types.js'
 
 const RELEASES_LIMIT = 100
 

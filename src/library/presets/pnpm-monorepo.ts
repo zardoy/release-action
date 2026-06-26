@@ -8,8 +8,8 @@ import type { Options } from 'mdast-util-to-markdown'
 import remark from 'remark'
 import { endGroup, startGroup } from '@actions/core'
 import { trueCasePath } from 'true-case-path'
-import { OutputData, PresetMain } from '../presets-common/type'
-import { generateNpmPackageJsonFields } from '../presets-common/generatePackageJsonFields'
+import { OutputData, PresetMain } from '../presets-common/type.js'
+import { generateNpmPackageJsonFields } from '../presets-common/generatePackageJsonFields.js'
 
 export const main: PresetMain<'pnpm-monorepo'> = async ({ octokit, repo, presetConfig, doPublish }) => {
     const mainPackage = presetConfig.mainPackage ?? repo.octokit.repo
@@ -72,7 +72,7 @@ export const main: PresetMain<'pnpm-monorepo'> = async ({ octokit, repo, presetC
 export const getLatestReleaseBody = async (changelogMarkdown: string) =>
     remark()
         .use(() => rootNode => {
-            // @ts-expect-error TODO update remark when esm issues with jest are resolved
+            // @ts-expect-error remark types lag behind ESM usage
             const { children } = rootNode
             const firstHeading2Index = children.findIndex(node => node.type === 'heading' && node.depth === 2) as number
             let headingBody = children.slice(firstHeading2Index + 1)

@@ -2,8 +2,8 @@
 
 import { Octokit } from '@octokit/rest'
 import { PackageJson } from 'type-fest'
-import { NextVersionReturn as NextVersionResult } from '../bumpVersion'
-import { Config, GlobalPreset, PresetSpecificConfigs } from '../config'
+import { NextVersionReturn as NextVersionResult } from '../bumpVersion.js'
+import { Config, GlobalPreset, PresetSpecificConfigs } from '../config.js'
 
 export type InputData<T extends GlobalPreset> = {
     doPublish: boolean
