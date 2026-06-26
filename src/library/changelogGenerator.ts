@@ -1,4 +1,4 @@
-import { sortBy } from 'lodash'
+import lodash from 'lodash'
 import { BasicReleaseType, NextVersionReturn } from './bumpVersion.js'
 import { Config } from './config.js'
 
@@ -103,7 +103,7 @@ export const generateChangelog = (
         })
     }
 
-    let markdown = sortBy(headings, ({ order }) => order)
+    let markdown = lodash.sortBy(headings, ({ order }) => order)
         .map(({ markdown }) => markdown)
         .join('\n')
     // TODO describe metadata in Readme. this will allow github-extra to filter out releases by type (e.g. whether they have new features or not)

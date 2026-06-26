@@ -1,6 +1,6 @@
 import { endGroup, startGroup } from '@actions/core'
 import { Octokit, RestEndpointMethodTypes } from '@octokit/rest'
-import { defaultsDeep } from 'lodash'
+import lodash from 'lodash'
 import { PackageJson, PartialDeep } from 'type-fest'
 import { writePackageJsonFile } from 'typed-jsonfile'
 import { GlobalPreset } from '../config.js'
@@ -79,7 +79,7 @@ const presetSpecificOverrides: PartialDeep<Record<GlobalPreset, Partial<SharedAc
     },
 }
 
-export const resolveSharedActions = (preset: GlobalPreset) => defaultsDeep(presetSpecificOverrides[preset], defaults) as SharedActions
+export const resolveSharedActions = (preset: GlobalPreset) => lodash.defaultsDeep(presetSpecificOverrides[preset], defaults) as SharedActions
 
 // eslint-disable-next-line complexity
 export const runSharedActions = async (preset: GlobalPreset, octokit: Octokit, repo: { repo: string; owner: string }, actionsToRun: SharedActions) => {

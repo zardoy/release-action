@@ -4,7 +4,7 @@ import { promises, readFileSync } from 'fs'
 import { dirname, join } from 'path'
 import { fileURLToPath } from 'url'
 import { Octokit } from '@octokit/rest'
-import { defaultsDeep } from 'lodash'
+import lodash from 'lodash'
 import { modifyPackageJsonFile } from 'modify-json-file'
 import { cosmiconfig } from 'cosmiconfig'
 import { readPackageJsonFile } from 'typed-jsonfile'
@@ -71,9 +71,9 @@ program
             if (!process.env.GITHUB_TOKEN) throw new Error('GITHUB_TOKEN is not defined. Make sure you pass it via env from GitHub action')
             if (!process.env.CI) throw new Error('This tool is intended to be run in GitHub action workflow')
             const userConfig = await cosmiconfig('release').search()
-            const config = defaultsDeep(userConfig?.config || {}, defaultConfig) as Config
-            config.preset = defaultsDeep(config.preset, presetSpecificConfigDefaults[preset])
-            const actionsToRun = defaultsDeep(config.sharedActionsOverride, resolveSharedActions(preset)) as SharedActions
+            const config = lodash.defaultsDeep(userConfig?.config || {}, defaultConfig) as Config
+            config.preset = lodash.defaultsDeep(config.preset, presetSpecificConfigDefaults[preset])
+            const actionsToRun = lodash.defaultsDeep(config.sharedActionsOverride, resolveSharedActions(preset)) as SharedActions
             if (options.forceUseVersion) actionsToRun.bumpVersionAndGenerateChangelog = false
             if (options.autoUpdate) {
                 config.githubPostaction = 'tag'

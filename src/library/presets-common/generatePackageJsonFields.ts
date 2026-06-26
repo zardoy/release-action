@@ -3,7 +3,7 @@ import path, { join } from 'path'
 import { modifyPackageJsonFile } from 'modify-json-file'
 import { PackageJson } from 'type-fest'
 import { readPackageJsonFile, readTsconfigJsonFile, writePackageJsonFile } from 'typed-jsonfile'
-import { defaultsDeep } from 'lodash'
+import lodash from 'lodash'
 import { Config, PresetSpecificConfigs } from '../config.js'
 import { OctokitRepo } from '../types.js'
 import { SharedActions } from './sharedActions.js'
@@ -54,7 +54,7 @@ export const generateNpmPackageJsonFields = async (dir: string, npmConfig: NpmCo
         fieldsToRemove.add(fieldName)
     }
 
-    const packageJson = defaultsDeep(initialPackageJson, generatedFields) as PackageJson
+    const packageJson = lodash.defaultsDeep(initialPackageJson, generatedFields) as PackageJson
     await writePackageJsonFile({ dir }, packageJson)
 
     return {

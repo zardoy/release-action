@@ -1,4 +1,4 @@
-import { omit } from 'lodash'
+import lodash from 'lodash'
 import type { Mock } from 'vitest'
 
 export const trackExecaCalls = (execaMock: Mock) => {
@@ -10,7 +10,7 @@ export const trackExecaCalls = (execaMock: Mock) => {
     const getCalls = () =>
         execaMock.mock.calls.map(([cmd, args, opts]) => [
             `${cmd} ${(args as string[]).join(' ')}`,
-            omit(opts as Record<string, unknown>, 'stdio'),
+            lodash.omit(opts as Record<string, unknown>, 'stdio'),
         ])
 
     return { noStdio, getCalls }
